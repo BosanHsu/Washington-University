@@ -1,0 +1,461 @@
+---
+title: "519095_Bosan_Individual2"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+date: "2023-12-16"
+---
+##Exercise 6.8: Problem 8 (parts e & f)
+##e
+```{r}
+library(glmnet)
+
+set.seed(15)
+n <- 100
+p <- 10
+X <- matrix(rnorm(n * p), n, p)
+y <- rnorm(n)
+
+train_indices <- sample(1:n, size = 0.8 * n)
+X_train <- X[train_indices, ]
+y_train <- y[train_indices]
+X_test <- X[-train_indices, ]
+y_test <- y[-train_indices]
+
+cv.out <- cv.glmnet(X_train, y_train, alpha = 1)
+
+plot(cv.out)
+
+best_lambda <- cv.out$lambda.min
+lasso.mod <- glmnet(X_train, y_train, alpha = 1, lambda = best_lambda)
+lasso.pred <- predict(lasso.mod, s = best_lambda, newx = X_test)
+
+mse <- mean((lasso.pred - y_test)^2)
+lasso.coef <- coef(lasso.mod, s = best_lambda)
+print(lasso.coef)
+print(mse)
+
+##Lazzo can remove some predictors
+```
+#f
+```{r}
+library(glmnet)
+set.seed(15)
+
+
+beta_0 <- 1.5
+beta_7 <- 2.0
+Y <- beta_0 + beta_7 * X[, 7] + rnorm(n)
+
+
+Y_train <- Y[train_indices]
+Y_test <- Y[-train_indices]
+
+
+lasso_mod_Y <- glmnet(X_train, Y_train, alpha = 1, lambda = best_lambda)
+lasso_pred_Y <- predict(lasso_mod_Y, s = best_lambda, newx = X_test)
+
+
+mse_Y <- mean((lasso_pred_Y - Y_test)^2)
+
+
+lasso_coef_Y <- coef(lasso_mod_Y, s = best_lambda)
+print(lasso_coef_Y)
+print(mse_Y)
+
+
+best_subset <- function(X, Y, size) {
+  n <- ncol(X)
+  best_score <- Inf
+  best_model <- NULL
+  
+  for (i in 1:size) {
+    combinations <- combn(n, i, simplify = FALSE)
+    for (comb in combinations) {
+      X_subset <- as.matrix(X[, comb, drop = FALSE])
+      # SKIP glmnet IF ONE COL
+      if (ncol(X_subset) == 1) {
+        next
+      }
+      model <- glmnet(X_subset, Y, alpha = 1, lambda = best_lambda)
+      pred <- predict(model, newx = X_subset, s = best_lambda)
+      mse <- mean((pred - Y)^2)
+      
+      if (mse < best_score) {
+        best_score <- mse
+        best_model <- comb
+      }
+    }
+  }
+  
+  return(list("model" = best_model, "score" = best_score))
+}
+
+best_subset_result <- best_subset(X_train, Y_train, p)
+print(best_subset_result)
+# The 1th, 3th, 5th, 7th predictors work best in this Lazzo model, with only 0.0372 MSE
+```
+
+##Exercise 8.4: Problem 8 (parts a, b, & c)
+##Problem #8: In the lab, a classification tree was applied to the Carseats data set after converting Sales into a qualitative ##response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as ##a quantitative variable.
+
+##(a) Split the data set into a training set and a test set.
+```{r}
+library(ISLR)
+set.seed(1)
+
+train = sample(1:nrow(Carseats), nrow(Carseats)/2)
+car_train = Carseats[train, ]
+car_test = Carseats[-train,]
+```
+##(b) Fit a regression tree to the training set. Plot the tree, and interpret the results. What test MSE do you obtain?
+```{r}
+library(tree)
+# train the tree
+tree_regression = tree(Sales~.,data = car_train)
+summary(tree_regression)
+
+plot(tree_regression)
+text(tree_regression ,pretty =0)
+
+tree_prediction = predict(tree_regression, newdata=car_test)
+tree_MSE <- mean((tree_prediction - car_test$Sales)^2)
+tree_MSE 
+
+```
+##(c) Use cross-validation in order to determine the optimal level of tree complexity. Does pruning the tree improve the test MSE?
+```{r}
+cv.carseats = cv.tree(tree_regression, FUN = prune.tree)
+plot(cv.carseats$size, cv.carseats$dev, type = "b")
+
+```
+## The graph above shows that deviation keep dropping when the size is 18
+## Thus, I picked 18 as the best size
+```{r}
+prune_car = prune.tree(tree_regression, best = 18)
+plot(prune_car)
+text(prune_car, pretty = 0)
+
+prune_prediction = predict(prune_car, newdata= car_test)
+
+Prune_MSE = mean((prune_prediction - car_test$Sales)^2)
+Prune_MSE
+```
+##The best size is 18. (Cross-Validation)
+##In my test, the MSE remained the same after pruning the trees (remained 4.922039)
+```
+```
+##Problem #8: In the lab, a classification tree was applied to the Carseats data set after converting Sales into a qualitative response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable.
+# (d) Use the bagging approach in order to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables are most important.
+
+```{r}
+library(randomForest)
+set.seed(88)
+bagging_car = randomForest( Sales~., data = car_train, mtry = 10, importance = TRUE)
+yhat_bagging = predict( bagging_car, newdata = car_test)
+bagging_mse = mean((yhat_bagging - car_test$Sales)^2)
+print(bagging_mse)
+importance(bagging_car)
+
+## The MSE using bagging is 2.618008
+## Price's "%IncMSE" is 56.594782 and "it'sIncNodePurity" is 506.92540, which these both values are the highest values. 
+## Thus, Price is the most important variable in this case.
+```
+# (e)Use random forests to analyze this data. What test MSE do you obtain? Use the importance() function to determine which variables are most important. Describe the effect of m, the number of variables considered at each split, on the error rate obtained.
+```{r}
+set.seed(88)
+randomforest_car = randomForest(Sales~., data = car_train, mtry = 3, importance = TRUE)
+yhat_randomforest = predict(randomforest_car, newdata = car_test)
+mse_randomforest = mean((yhat_randomforest - car_test$Sales)^2)
+print(mse_randomforest)
+importance(randomforest_car)
+
+## The MSE using random forest is 3.005177 > 2.618008, there is no improvement using rf instead of bagging in this case
+## Price's "%IncMSE" is 56.594782 and "it'sIncNodePurity" is 506.92540, which these both values are the highest values. 
+## Thus, Price is the most important variable in this case.
+```
+#Problem #10: We now use boosting to predict Salary in the Hitters data set.
+#(a) Remove the observations for whom the salary information is unknown, and then log-transform the salaries.
+```{r}
+library(dplyr)
+data("Hitters")
+
+Hitters %>% 
+  filter(!is.na(Salary)) %>% 
+  mutate(Salary = log(Salary)) -> Hitters
+
+head(Hitters)
+```
+(b) Create a training set consisting of the first 200 observations, and a test set consisting of the remaining observations.
+```{r}
+hit_train <- Hitters[1:200,]
+hit_test <- Hitters[-(1:200),]
+```
+(c) Perform boosting on the training set with 1,000 trees for a range of values of the shrinkage parameter λ. Produce a plot with different shrinkage values on the x-axis and the corresponding training set MSE on the y-axis.
+```{r}
+library(gbm)
+
+shrinkage_values <- seq(0.01, 0.1, by = 0.01)
+
+#store every model's error
+train_mse <- rep(NA, length(shrinkage_values))
+
+#boosting
+for (i in seq_along(shrinkage_values)) {
+  set.seed(10)
+  gbm_model <- gbm(Salary ~ ., data = hit_train, distribution = "gaussian",
+                   n.trees = 1000, shrinkage = shrinkage_values[i])
+  pred <- predict(gbm_model, hit_train, n.trees=1000)
+  train_mse[i] <- mean((pred - hit_train$Salary)^2)
+}
+
+
+plot(shrinkage_values, train_mse, type="b", xlab="Shrinkage", ylab="Training MSE")
+
+```
+
+(d) Produce a plot with different shrinkage values on the x-axis and the corresponding test set MSE on the y-axis.
+```{r}
+library(gbm)
+
+shrinkage_values <- seq(0.01, 0.1, by = 0.01)
+
+test_mse <- rep(NA, length(shrinkage_values))
+
+for (i in seq_along(shrinkage_values)) {
+  set.seed(10)
+  gbm_model <- gbm(Salary ~ ., data = hit_train, distribution = "gaussian",
+                   n.trees = 1000, shrinkage = shrinkage_values[i])
+  pred <- predict(gbm_model, hit_test, n.trees = 1000)
+  test_mse[i] <- mean((pred - hit_test$Salary)^2)
+}
+
+plot(shrinkage_values, test_mse, type = "b", xlab = "Shrinkage", ylab = "Test MSE")
+boosted_mse = min(test_mse)
+boosted_mse
+
+```
+
+(e) Compare the test MSE of boosting to the test MSE that results from applying two of the regression approaches seen in Chapters 3 and 6.
+```{r}
+library(glmnet)
+
+lm = lm(Salary ~ ., data = hit_train)
+lm_prediction = predict(lm, newdata = hit_test)
+lm_mse = mean((lm_prediction - hit_test$Salary)^2)
+
+x_train <- model.matrix(Salary ~ ., hit_train)[,-1]
+y_train <- hit_train$Salary
+x_test <- model.matrix(Salary ~ ., hit_test)[,-1]
+y_test <- hit_test$Salary
+
+lasso <- glmnet(x_train, y_train, alpha = 1, lambda = 0.1)
+lasso_predictions <- predict(lasso, s = 0.1, newx = x_test)
+lasso_test_mse <- mean((lasso_predictions - y_test)^2)
+
+print(paste("Linear Test MSE:", lm_mse))
+print(paste("Lazzo Test MSE:", lasso_test_mse))
+print(paste("Boosted Test MSE:", boosted_mse))
+
+#Boosted has the smallest MSE, 0.2443.
+```
+
+(f) Which variables appear to be the most important predictors in the boosted model?
+```{r}
+boosted.model = gbm(Salary~., data = hit_train, distribution = "gaussian", n.trees = 1000, shrinkage=shrinkage_values[which.min(test_mse)])
+summary(boosted.model)
+
+#CAtBat is the most important variable( highest rel.inf )
+```
+
+(g) Now apply bagging to the training set. What is the test set MSE for this approach?
+
+```{r}
+bagging = randomForest(Salary~., data = hit_train, distribution = "gaussian", n.trees = 500, shrinkage = lambdas[which.min(test.error)], mtry = 19, importance = TRUE)
+bagging_prediction = predict(bagging, hit_test)
+
+bagging_test_mse = mean((bagging_prediction - hit_test$Salary)^2)
+bagging_test_mse
+
+#The test MSE is 0.2321575 in this approach
+```
+#Proble, 11.4
+#Direct Mailing to Airline Customers. East-West Airlines has entered into a partnership with the wireless phone company Telcon to sell the latter’s service via direct mail. The file EastWestAirlinesNN.csv Download EastWestAirlinesNN.csv contains a subset of a data sample of who has already received a test offer. About 13% accepted.
+
+#You are asked to develop a model to classify East-West customers as to whether they purchase a wireless phone service contract (outcome variable Phone_Sale). This model will be used to classify additional customers.
+
+#1. Run a neural net model on these data, using a single hidden layer with 5 nodes. Remember to first convert categorical variables into dummies and scale numerical predictor variables to a 0-1 (use function preprocess() with method=“range” - see Chapter 7). Generate a deciles-wise lift chart for the training and validation sets. Interpret the meaning (in business terms) of the leftmost bar of the validation decile- wise lift chart.
+```{r}
+library(caret)
+library(nnet)
+library(ggplot2)
+library(dplyr)
+
+# Load your data
+data <- read.csv("EastWestAirlinesNN.csv")
+data <- na.omit(data)
+
+# Convert categorical variables into dummy variables
+dummies <- dummyVars("~ .", data = data)
+data_transformed <- predict(dummies, newdata = data)
+
+# Scale numerical predictor variables to a 0-1 range
+preproc <- preProcess(data_transformed, method = "range")
+data_scaled <- predict(preproc, data_transformed)
+
+
+if (!is.data.frame(data_scaled)) {
+  data_scaled <- as.data.frame(data_scaled)
+}
+
+if (!("Phone_sale" %in% names(data_scaled))) {
+  data_scaled$Phone_sale <- data$Phone_sale
+}
+
+# Split the data into training and validation sets
+set.seed(123) # for reproducibility
+trainingIndex <- createDataPartition(data_scaled$Phone_sale, p = .8, list = TRUE)
+trainingData <- data_scaled[trainingIndex[[1]], ]
+validationData <- data_scaled[-trainingIndex[[1]], ]
+```
+
+```{r}
+# Load necessary libraries
+library(caret)
+library(nnet)
+library(ggplot2)
+library(dplyr)
+#install.packages("neuralnet")
+library(neuralnet)
+
+# Load your data
+data <- read.csv("EastWestAirlinesNN.csv")
+data <- na.omit(data)
+
+# Convert categorical variables into dummy variables
+dummies <- dummyVars("~ .", data = data)
+data_transformed <- predict(dummies, newdata = data)
+data_transformed <- as.data.frame(data_transformed)
+data_transformed$Phone_sale <- as.factor(data$Phone_sale)
+
+
+#scale 0-1
+preproc <- preProcess(data_transformed[, -which(names(data_transformed) == "Phone_sale")], method = "range")
+data_scaled <- predict(preproc, data_transformed)
+
+
+data_scaled <- as.data.frame(data_scaled)
+data_scaled$Phone_sale <- as.factor(data$Phone_sale)
+
+# Split the data into training and validation sets
+set.seed(123) # for reproducibility
+trainingIndex <- createDataPartition(data_scaled$Phone_sale, p = .8, list = TRUE)
+trainingData <- data_scaled[trainingIndex[[1]], ]
+validationData <- data_scaled[-trainingIndex[[1]], ]
+
+nn_model <- neuralnet(Phone_sale ~ ., data = trainingData, hidden = 5, linear.output = FALSE)
+plot( nn_model, rep = "best")
+```
+
+```{r}
+#install.packages("gains")
+library(gains)
+prediction <- predict(nn_model, trainingData, type = "raw")
+actual_numeric <- as.numeric(as.character(trainingData$Phone_sale))
+predicted_probabilities <- prediction[, 2]
+gain <- gains(actual_numeric, predicted_probabilities)
+barplot(gain$mean.resp / mean(actual_numeric), names.arg = gain$depth, 
+        xlab = "%", ylab = "mean", main = "Training Lift Chart")
+
+## The first bar in a decile-wise lift chart represents the top 10% of cases predicted by a model to be the most likely to have the positive outcome you're interested in.
+## For example, this could represent a group of customers most likely to respond to a marketing campaign, the most profitable segment, or those who are most likely to churn, depending on the context of the model's objective.
+```
+##2. Comment on the difference between the training and validation lift charts.
+```{r}
+prediction_valid <- predict(nn_model, validationData, type = "raw")
+actual_numeric_valid <- as.numeric(as.character(validationData$Phone_sale))
+predicted_probabilities_valid <- prediction_valid[, 2]
+gain_valid <- gains(actual_numeric_valid, predicted_probabilities_valid)
+barplot(gain_valid$mean.resp / mean(actual_numeric_valid), names.arg = gain_valid$depth, 
+        xlab = "%", ylab = "mean", main = "Validation Lift Chart")
+
+## The training lift chart shows a significantly higher lift in the first decile compared to the validation lift chart. This suggests that the model may overfits to the training data. 
+
+```
+
+
+3. Run a second neural net model on the data, this time setting the number of hidden nodes to 1. Comment now on the difference between this model and the model you ran earlier, and how overfitting might have affected results.
+```{r}
+nn_model_2 <- neuralnet(Phone_sale ~ ., data = trainingData, hidden = 1, linear.output = FALSE)
+plot( nn_model_2, rep = "best")
+
+error_nn_model <- as.character(nn_model$result.matrix[1,])
+print(paste("hidden = 5, error =", error_nn_model))
+
+error_nn_model_2 <- as.character(nn_model_2$result.matrix[1,])
+print(paste("hidden = 1, error =", error_nn_model_2))
+
+## when there is 5 hidden nodes, the error is lower
+## however, having more node might overfit the data
+```
+4. What sort of information, if any, is provided about the effects of the various variables?
+```{r}
+nn_model$result.matrix
+
+#The variance generalized weights are provided
+#If the absolute value of the weight is high, it means that the variable has great impact on the outcome
+```
+
+
+Exercise 10.7: Problem 9
+
+ISLR p.417
+
+9. Consider the USArrests data. We will now perform hierarchical clustering on the states.
+
+(a) Using hierarchical clustering with complete linkage and Euclidean distance, cluster the states.
+```{r}
+data("USArrests")
+cluster_complete <- hclust(dist(USArrests), method = "complete")
+plot(cluster_complete, main = "Hierarchical Clustering with Complete Linkage", sub = "", xlab = "")
+
+```
+
+(b) Cut the dendrogram at a height that results in three distinct clusters. Which states belong to which clusters?
+```{r}
+# From my perspective, I'll make split the data into three groups
+cut_complete <- cutree(cluster_complete, k = 3)
+
+
+clusters <- data.frame(State = names(cut_complete), Cluster = cut_complete)
+clusters_sorted <- clusters[order(clusters$Cluster, clusters$State), ]
+print(clusters_sorted)
+
+#Alabama, Alaska, Arizona, California, Delaware, Florida, Illinois, Louisiana, Maryland, Michigan,  Mississippi, Nevada, New Mexico, New York, Carolina	North Carolina: Cluster	1		
+
+# Arkansas, Colorado, Georgia, Massachusetts, Missouri, New Jersey, Oklahoma,	Oregon, Tennessee, Texas, Virginia, Washington	Washington	2	
+
+#Others are in the third cluster
+```
+(c) Hierarchically cluster the states using complete linkage and Euclidean distance, after scaling the variables to have standard deviation one.
+```{r}
+library(purrr)
+
+scaling <- function(x) (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
+
+scaled_cluster <- USArrests %>%
+    map_df(scaling) %>%
+    dist(method = 'euclidean') %>%
+    hclust(method = 'complete')
+
+scaled_cluster$labels <- row.names(USArrests)[scaled_cluster$order]
+scaled_cluster$labels
+```
+(d) What effect does scaling the variables have on the hierarchical clustering obtained? In your opinion, should the variables be scaled before the inter-observation dissimilarities are computed? Provide a justification for your answer.
+```{r}
+# Scaling the variables ensures that each variable contributes equally to the distance calculations
+# Without scaling, there might be dominating variables, and the clustering results might be skewed towards variables with    larger magnitudes.
+# We should scale the variables before we compute the euclidean distances
+# So that there will be no dominating variables, and the clustering process will be more interpretable, as it removes the bias introduced by the scale of the variables.
+```
