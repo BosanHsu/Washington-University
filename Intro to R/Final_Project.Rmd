@@ -1,0 +1,450 @@
+---
+title: "Final Project"
+output: Team Name with all students name
+---
+
+Final Project
+load the dataset
+```{r}
+Used_car_price = read.csv("Used_car_price.csv")
+```
+
+Part 1: Exploratory Data Analysis and Preprocessing
+In this part, you need to use R to carry out a simple exploratory data analysis (EDA). The EDA should include the following parts: 
+
+a) Load the dataset and save it as “Used_car_price”. Look at the first few rows of the dataset and check the types of all variables. 
+```{r}
+# Import package 
+library(ggplot2)
+
+# Check the number of observations and variables
+# Check the number of observations and variables
+cat("Number of observations:", nrow(Used_car_price), "\n")
+cat("Number of variables:", ncol(Used_car_price), "\n")
+
+# Read the first 6 rows
+head(Used_car_price)
+
+# View the data type
+str(Used_car_price)
+```
+
+b) Explore and calculate the percentage of missing values for all variables. You will find that the percentage of missing values of the variable “New_Price” is too high please remove the column from the dataset. 
+```{r}
+# Calculate the percentage of missing values for all variables
+missing_values <- is.na(Used_car_price) | Used_car_price == ""
+
+# Calculate the percentage of missing values for all variables
+missing_percent <- colMeans(missing_values) * 100
+
+# Print the percentage of missing values for each variable
+print(missing_percent)
+
+
+```
+
+```{r}
+# Remove the "New_Price" column
+Used_car_price <- Used_car_price[, !(names(Used_car_price) %in% "New_Price")]
+```
+
+c)	Find out whether there are outliers for each of the predictors and the response. Please report the columns that have outliers. You will find that there is an obvious outlier in the column “Kilometers_Driven” please remove that observation.(You do not need to remove other outliers)
+```{r}
+# Find outliers
+library(ggplot2)
+
+# Create boxplots for each numeric variable
+for (col in names(Used_car_price)) {
+  if (is.numeric(Used_car_price[[col]])) {
+    p <- ggplot(Used_car_price, aes(x = 1, y = Used_car_price[[col]])) +
+      geom_boxplot() +
+      labs(title = paste("Boxplot of", col), x = "", y = col) +
+      theme_minimal() +
+      theme(plot.title = element_text(hjust = 0.5))
+    
+    print(p)
+  }
+}
+```
+# remove the observation
+```{r}
+# Detect and remove the outlier in the "Kilometers_Driven" column
+outlier_index <- which.max(Used_car_price$Kilometers_Driven)
+Used_car_price <- Used_car_price[-outlier_index, ]
+```
+
+
+d)	Descriptive statistics (mean, median, max, min, etc.) for all numeric variables. You will find that there is an observation whose seat is 0, this will not happen in currentl cars please remove the observation(the row whose seat is 0).
+```{r}
+# Select only numeric variables
+# Calculate descriptive statistics
+numeric_vars <- sapply(Used_car_price, is.numeric)
+numeric_data <- Used_car_price[, numeric_vars]
+statistics <- summary(numeric_data)
+
+# Print descriptive statistics
+print(statistics)
+```
+# remove the observation
+```{r}
+# Remove observation with seat value of 0
+Used_car_price <- subset(Used_car_price, Seats != 0)
+```
+e) Analyze the distribution of the response variable "Price". 
+```{r}
+
+
+# select "price"
+price_data <- Used_car_price$Price
+
+# Draw a histogram plot
+ggplot() +
+  geom_histogram(aes(x = price_data), bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Distribution of Price", x = "Price", y = "Frequency") +
+  theme_minimal()
+```
+
+f)	Evaluate the potential effects of explanatory variables on the response variable.
+```{r}
+# Perform multiple linear regression
+model <- lm(Price ~ Year + Kilometers_Driven +
+Mileage + Engine + Power + Seats, data = Used_car_price)
+
+# Print regression summary
+summary(model)
+
+# According to the result, the Year(the used time of the car the Power and Engine has positive effects to Price, while Milage and kilometers driven has significant negative effect.s
+```
+
+
+
+
+Part 2: Basic Statistical Analysis
+In this part, you need to perform basic statistical analysis on several specific groups of used cars with R.
+
+a)	Conmpare the mean and mode of the total kilometers driven between 2003 cars and 2018 cars.
+```{r}
+library(modeest)
+      Used_Car <- read.csv("Used_car_price.csv")
+      
+      cars_2003 <- Used_Car[ Used_Car$Year == 2003 , ]
+      cars_2018 <- Used_Car[ Used_Car$Year == 2018 , ]
+      
+      mean_2003 <- mean( cars_2003$Kilometers_Driven )
+      mode_2003 <- mfv( cars_2003$Kilometers_Driven)
+      mean_2018 <- mean( cars_2018$Kilometers_Driven )
+      mode_2018 <- mfv( cars_2018$Kilometers_Driven )
+      
+      cat( "Used cars in 2003 has a mean of ", mean_2003 , ", and mode values are " , mode_2003 , "\n" ,"; used cars in 2018 has a mean of ", mean_2018 , ", and mode values are" , mode_2018 , "."  )
+      
+```
+
+b)	Compare the mean, medium, min and max of the price between first and second hand cars. 
+```{r}
+      First_hand <- Used_Car[ Used_Car$Owner_Type == "First" , ]
+      Second_hand <- Used_Car[ Used_Car$Owner_Type == "Second" , ]
+      print("Price of Frist hand cars:")
+      summary( First_hand$Price )
+      print("Print of Second hand cars:")
+      summary( Second_hand$Price )
+```
+
+c)	Compute the 5th and 95th percentiles of the price of the cars with the manual transmission and the diesel fuel type.
+```{r}
+      Manual <- Used_Car[ Used_Car$Transmission == "Manual", ]
+      Diesel <- Manual[ Manual$Fuel_Type == "Diesel", ]
+      
+      p5 <- quantile( Diesel$Price , 0.05 )
+      p95 <- quantile( Diesel$Price , 0.95 )
+      p5
+      p95
+```
+
+d)	Find the five-number quantiles of the total kilometers driven in the car with the total kilometers driven in the car larger than 10000.
+```{r}
+ten_thousand_km <- quantile(Used_Car[Used_Car$Kilometers_Driven >= 10000, "Kilometers_Driven"], na.rm = TRUE)
+
+ten_thousand_km
+```
+
+e)	Find the variance and the standard deviation of the total kilometers driven in the car with petrol as the fuel.
+```{r}
+      Petrol <- Used_Car[ Used_Car$Fuel_Type == "Petrol", ]
+      var( Petrol$Kilometers_Driven )
+      sd( Petrol$Kilometers_Driven )
+```
+
+f)	Remove the null values in the dataset and save it as a new dataset whose name is “Used_car_NAremoved”.
+```{r}
+      Used_car_NAremoved <- na.omit( Used_Car )
+```
+
+g)	Find the standard error associated with the mean total kilometers for the first 100 rows of "Used_car_NAremoved".
+```{r}
+      first_100 <- Used_car_NAremoved[ 1:100 , ]
+      std.err <- sd( first_100$Kilometers_Driven )/ sqrt( 100 )
+      std.err
+```
+h)	Assuming the total kilometers are normally distributed, evaluate the probability that the mean total kilometers lie between 20000 and 50000 if there are another group of cars of the same size as the dataset.Use the "Used_car_NAremoved" to calculate the result. 
+```{r}
+      km <- pnorm( 50000 , mean = mean( first_100$Kilometers_Driven ) , sd = std.err ) - pnorm( 20000 , mean = mean( first_100$Kilometers_Driven ) , sd = std.err )
+      km_percentage <- km * 100
+      km_percentage
+```
+
+# Part 3: Hypothesis testing
+In this part you are going to use the “Used_car_price” to perform two hypothesis testing. 
+
+Question 1 You think there is a price difference between cars with owner type of First and Second, and you would like to prove your thought. What about the price different between cars with owner type of Second and Third? Assuming the significance level is 0.05. Follow the 6-step procedure and write out your answers step by step.
+
+####Fill the following steps and conduct the hypothesis test
+####Step1: Problem Definition
+Answer:  
+Test whether there is a price difference between cars owner types "First" and "Second," as well as difference between type "Second" and "Third."
+
+####Step2: Null and Alternative hypothesis
+Answer:  
+(1)
+H0:There is no price difference between cars with owner type "First" and "Second."
+H1:There is a price difference between cars with owner type "First" and "Second."
+(2)
+H0:There is no price difference between cars with owner type "Second" and "Third."
+H1:There is a price difference between cars with owner type "Second" and "Third."
+
+####Step3: Select statistic
+Answer: 
+We use two-sample t-test.
+
+####Step4: Calculate statistic value and p-value
+Answer: 
+For 1st and 2nd owner type:
+```{r}
+first_prices <- Used_car_price$Price[Used_car_price$Owner_Type == "First"]
+second_prices <- Used_car_price$Price[Used_car_price$Owner_Type == "Second"]
+
+t_test_first_second <- t.test(first_prices, second_prices)
+t_stat_first_second <- t_test_first_second$statistic
+p_value_first_second <- t_test_first_second$p.value
+p_value_first_second
+```
+
+For 2nd and 3rd owner type:
+```{r}
+second_prices <- Used_car_price$Price[Used_car_price$Owner_Type == "Second"]
+third_prices <- Used_car_price$Price[Used_car_price$Owner_Type == "Third"]
+
+t_test_second_third <- t.test(second_prices, third_prices)
+t_stat_second_third <- t_test_second_third$statistic
+p_value_second_third <- t_test_second_third$p.value
+p_value_second_third
+```
+
+####Step5: Compare p-value with significance level
+Answer: 
+the p-values here are both less than the significance level 0.05.
+
+####Step6: Draw Conclusion
+Answer: 
+With 95% of confidence, we could reject the null hypothesis that is no price difference between cars with the owner types "First" and "Second," as well as difference between type "Second" and "Third."
+
+
+
+Question 2 Some one claimed that the kilometers driven of 2018 cars should not be greater than 25,000, and that of 2003 cars should not be less than 90,000. You want to test if the claim is supported by the data. Assume the significance level is 0.05 and the population is normally distributed. Follow the 6-step procedure and write out your answers step by step.
+
+####Fill the following steps and conduct the hypothesis test
+####Step1: Problem Definition
+Answer: 
+Test whether the kilometers driven for 2018 cars should not be greater than 25000 and that of 2003 cars should not be less than 90000.
+
+####Step2: Null and Alternative hypothesis
+Answer: 
+H0: The mean kilometers driven for 2018 cars is greater than or equal to 25,000, and the mean kilometers driven for 2003 cars is less than or equal to 90,000.
+H1: The mean kilometers driven for 2018 cars is less than 25,000, and the mean kilometers driven for 2003 cars is greater than 90,000.
+
+####Step3: Select statistic
+Answer: 
+We use z-test
+
+####Step4: Calculate statistic value and p-value
+Answer: 
+```{r}
+library(plyr)
+```
+
+```{r}
+#generate 2018&2003 data
+kilometers_2018 <- Used_Car$Kilometers_Driven[Used_Car$Year == 2018]
+sample_mean_2018 <- mean(kilometers_2018)
+population_mean_2018_claimed <- 25000
+population_std_dev_2018 <- sd(kilometers_2018)
+
+kilometers_2003 <- Used_Car$Kilometers_Driven[Used_Car$Year == 2003]
+sample_mean_2003 <- mean(kilometers_2003)
+population_mean_2003_claimed <- 90000
+population_std_dev_2003 <- sd(kilometers_2003)
+```
+
+
+```{r}
+#Setting up z.test function
+```
+
+```{r}
+#For 2018
+z_stat_2018 <- (sample_mean_2018 - population_mean_2018_claimed) / (population_std_dev_2018 / sqrt(length(kilometers_2018)))
+p_value_2018 <- pnorm(z_stat_2018, lower.tail = TRUE)
+
+p_value_2018
+```
+
+```{r}
+#For 2003
+z_stat_2003 <- (sample_mean_2003 - population_mean_2003_claimed) / (population_std_dev_2003 / sqrt(length(kilometers_2003)))
+p_value_2003 <- pnorm(z_stat_2003, lower.tail = FALSE)
+
+p_value_2003
+```
+
+####Step5: Compare p-value with significance level
+Answer: 
+the p-values here are both greater than the significance level 0.05.
+
+####Step6: Draw Conclusion
+Answer: 
+With 95% of confidence, we could not reject the null hypothesis that the mean kilometers driven for 2018 cars is greater than or equal to 25,000, and the mean kilometers driven for 2003 cars is less than or equal to 90,000.
+
+
+Part 4: Anova
+In this part, you need to explore whether the type of transmissions (Variable: "Transmission") of used cars have effect on the prices (Variable: "Price") by ANOVA with the dataset “Cleaned_car_price”. Note here in order to get an convincing answer here we cleaned the dataset set make sure you use the dataset “Cleaned_car_price” instead of the former dataset. 
+
+a)	Generate a boxplot to find the relationship between the two variables using ggplot2.
+```{r}
+library(ggplot2)
+cleaned_car_price <- read.csv("Cleaned_car_price.csv")
+ggplot(data=cleaned_car_price, aes(x=Transmission, y=Price)) + geom_boxplot(colour = "red")
+```
+
+b)	What are the null hypothesis and alternative hypothesis of the hypothesis test? Then, calculate the test statistic F and draw your conclusion with the critical F at α = 0.05.
+```{r}
+# H0: mu_auto = mu_manual
+# H1: mu_auto != mu_manual
+
+# MST
+MST <- sum((cleaned_car_price$Price- mean(cleaned_car_price$Price))^2)/(nrow(cleaned_car_price)-1)
+MST
+# MSW
+
+s1 <- var(cleaned_car_price[cleaned_car_price$Transmission == "Automatic","Price"])
+s2 <- var(cleaned_car_price[cleaned_car_price$Transmission == "Manual","Price"])
+
+n1 <- length(cleaned_car_price[cleaned_car_price$Transmission == "Automatic","Price"])
+n2 <- length(cleaned_car_price[cleaned_car_price$Transmission == "Manual","Price"])
+
+MSW <- ((n1-1)*s1 + (n2-1)*s2)/((n1-1)+(n2-1))
+MSW
+# MSB
+s1_bar <- mean(cleaned_car_price[cleaned_car_price$Transmission == "Automatic","Price"])
+s2_bar <- mean(cleaned_car_price[cleaned_car_price$Transmission == "Manual","Price"])
+total_bar <- mean(cleaned_car_price$Price)
+
+MSB <- (n1*((s1_bar-total_bar)^2) + n2*((s2_bar-total_bar)^2))/(2-1)
+MSB
+
+# the test statistic F and the critical F
+f_test <- MSB/MSW
+f_test
+
+α <- 0.05
+f_critical <- qf((1-α/2),df1=1, df2=((n1-1)+(n2-1)))
+f_critical
+
+f_test > f_critical
+
+# Conclusion: We can reject null hypothesis.
+```
+
+
+
+c)	Use function aov() to do one-way ANOVA. According to the result of p-value, what can you conclude?
+```{r}
+ANOVA <- aov(Price ~ Transmission, data = cleaned_car_price)
+summary(ANOVA)
+
+# Conclusion: Since p-value <0.05, we can reject null hypothesis.
+```
+
+d)	In this part, another factor owner type (Variable: "Owner_Type") was taken into consideration. You need to explore the effect of transmission and owner type on price with interaction. So, what are the null hypotheses and alternative hypotheses of the three hypothesis tests in two-way ANOVA? Using aov() function to verify hypotheses and get the conclusions.
+```{r}
+two_way_A <- aov(Price ~ Owner_Type* Transmission, data = cleaned_car_price)
+summary(two_way_A)
+
+# Conclusion: Since all p-values are lower than 0.05, we can have conclude that for Owner_Type, the effects of four levels of owner_type on prices are different. And for Transmission, the effects of two levels of Transmission on prices are also different. As for Interaction, Owner_Type has a different effect on Transmission.
+```
+
+Part 5: Linear Regression Analysis
+In this part, you need to perform a simple linear regression analysis with the data frame “Used_car_NAremoved”.
+
+a) How many rows are there in the new data set “Used_car_ cleaned”.
+```{r}
+      nrow( Used_car_NAremoved )
+```
+
+b) Try to run a simple regression with the new data set to estimate “Price” with one numeric variable that you picked. How are the results in statistical significance and practical meaning? (Show the process that you pick out this variable by comparing diagrams or data). 
+```{r}
+      reg_model <- lm( Price ~ Seats , data = Used_car_NAremoved )
+```
+```{r}
+      print( reg_model )
+```
+
+```{r}
+      # If the there are no seats. The expected value of price is 5.5029.
+      # As there is an addtional seat, the the expected value of price would increse by 0.7762 unit.
+```
+
+
+c) Some people argue that using the model in (b), he can estimate “Price” using his X variables in any range. Is it reliable? Do you see any problem in this statement? (Example: the estimate line is the red line, expending it to “Power=1000”, then we get the estimate value “ \widehat{price}=152”.) 
+```{r}
+      #The linear regression model only estimated the range of the data. Thus, if one expend the range too much, the estimation might not be effective.
+```
+
+
+d) Use the attributes “Year”, “Kilometers_Driven”, “Transmission”, “Engine” and “Power” to estimate “Price” with a multiple regression. Show the result, interpret how well is the model, and interpret the coefficient of the “Kilometers_Driven” and “Transmission”.
+```{r}
+      multi_reg_model <- lm( Price ~ as.factor(Year) + Kilometers_Driven + as.factor( Transmission ) + Engine + Power , data = Used_car_NAremoved )
+      summary( multi_reg_model)
+      
+      # By F-Test, the formula is significant.
+      # By T-Test, all variables except Year has significant effect on price.
+      # By adjusted R-squared, there are 68.9% of changes in heart weight can be explained by the formula.
+      # As there is an addtional kilometers driven, the the expected value of price would increse by 0.000002296 unit.
+      # If the transmission is manual, the the expected value of price would decrese by 2.827 unit.
+      
+```
+
+
+e) Some people want to put the “Name” attribute into the model, so that the adjusted R-squared  is more than 0.94. However, some of the names cannot pass the T Test. Moreover, if a car has a name which is not listed in the list, we cannot make any prediction to its price. What do you think could be a solution to this problem?
+      
+      #It seems that Name is not an effective variable in this model, I would suggest that we dig in more and try to find other variables that is not yet on the list.
+
+
+Part 6: Reflection (10 points)
+Write a 300-word summary of your answers and the business insights you get from answering these 5 parts based on your code. Ensure that you have clearly explained why we should care about your questions and your results? Clearly explain your findings.   
+
+
+
+## According to this whole process, we obtained whole understanding after getting a dataset and trying to figure out what information we can extract from the data set and ultimately help with our further business analysis.
+
+## First of all, after attaining a dataset, it might contain a lot of variables of different types. Because some of the variables might not be numeric, others might have so many missing values that lead make it useless. Also, the original data might require to be cleaned before using. For example, some datasets might use “NULL” as missing values, while some others using the empty stings. We have to look through these and after this step, we will have a clearer dataset for forward analysis.
+
+## After cleaning the dataset, we will also have to find out possible misleading data by finding outliers. Because some of the values in datasets might be too unreasonable according to our common sense, and without plotting out a box plot or other, we might let in some of the misleading outliers that may significantly affect our conclusion.
+
+## Then, we should find out one or more variable that we are interested in and focus on its distribution and try to figure out the possible effects of other variables on it based on analysis.
+
+##s We should then concentrate on different groups within the dataset as well. Instead of considering it as a whole, we now dive deeper and try to calculate basic statistics in different grouping methods. In this example, we group the cars into first and second handed, into different ages of cars, and other reasonable ways. According to this, we can have a better view of this dataset.
+
+## To be even more comprehensive, we use hypothesis tests and ANOVA trying to figure out whether there is difference between groups with relative grouping methods, in this way, we can find out whether the supposed way of grouping is useful or not. If the hypothesis test and ANOVA tests result in truth that the difference exist, we can use this as evidence that a model can be used to explain the target variable with the explanatory variable related to grouping. 
+
+# Therefore, after finishing this final project, we obtained the whole idea of what to do after given a raw dataset and finally find some useful business correlations.
+
+

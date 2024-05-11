@@ -1,0 +1,120 @@
+
+---
+title: "Homework 1 Introduction to R Programming"
+date: "3/1/2022"
+output: word_document
+---
+
+Part 1: Vector
+Question 1 
+a)	Load the “hotel_bookings.csv” dataset and have a look at the first several lines of the dataset.
+```{r}
+      read <- read.csv("hotel_bookings.csv")
+```
+
+b)	Create a new data frame which only includes "is_canceled", "lead_time" and "arrival_date_day_of_month" from bookings and convert the result to matrix and save the matrix as m. 
+```{r}
+      df1 <- read[,c(2,3,7)]
+      print( df1 )
+      m <- as.matrix(df1)
+      print(m)
+```
+
+c)	Rename "arrival_date_day_of_month" as "arrival_day_of_month".
+```{r}
+      names(m[,3]) <- "arrival_day_of_month"
+      print(m)
+```
+
+d)	Subset matrix "m" into two new matrixs by column "is_canceled". You can first select all reservation records that are not canceled and store them into a matrix, and then filter out reservation records that are canceled and store them into another matrix. Calculate the ratio of non-cancelled reservations to cancelled reservations.
+```{r}
+      m_canceled <- m[ m[,"is_canceled"] == 1, ]
+      print( m_canceled )
+      m_n_canceled <- m[ m[,"is_canceled"] == 0, ]
+      print( m_n_canceled )
+      amt_canceled <- nrow( m_canceled )
+      amt_n_canceled <- nrow( m_n_canceled )
+      ratio <- amt_n_canceled/amt_canceled
+      print( ratio )
+```
+
+e)	Calculate the day in the month when customers make the reservation, and use cbind() to store the results into a new column "book_day_of_month"in "m" matrix. Lead time is "number of days that elapsed between the booking date and the arrival date", and we assume every month has 30 days. tip: arrival_day_of_month - lead_time %%30. Note: It's fine to keep negative days as some of the orders may be reserved several months before. Temporarily, you do not need to solve the problem You will learn how to solve the problem in the next module. 
+```{r}
+      book_day_of_month <- ( m[ , 3] - m[ , 2 ] )%% 30
+      print( book_day_of_month )
+      cbind( m , book_day_of_month )
+      
+
+## convert negative days into positive ones
+
+
+#head(m)
+```
+
+Part 2: Data Frame
+Question 1 
+a)	Load the “hotel_bookings.csv” dataset and store the dataset as a data frame called bookings.
+```{r}
+      read <- read.csv("hotel_bookings.csv")
+      bookings <- as.data.frame( read )
+      print(bookings)
+```
+b)	Convert "arrival_date_month" into numerical as follows:
+```{r}
+      bookings$arrival_date_month[bookings$arrival_date_month == "January"] <- 1
+      bookings$arrival_date_month[bookings$arrival_date_month == "February"] <- 2
+      bookings$arrival_date_month[bookings$arrival_date_month == "March"] <- 3
+      bookings$arrival_date_month[bookings$arrival_date_month == "April"] <- 4
+      bookings$arrival_date_month[bookings$arrival_date_month == "May"] <- 5
+      bookings$arrival_date_month[bookings$arrival_date_month == "June"] <- 6
+      bookings$arrival_date_month[bookings$arrival_date_month == "July"] <- 7
+      bookings$arrival_date_month[bookings$arrival_date_month == "August"] <- 8
+      bookings$arrival_date_month[bookings$arrival_date_month == "September"] <- 9
+      bookings$arrival_date_month[bookings$arrival_date_month == "October"] <- 10
+      bookings$arrival_date_month[bookings$arrival_date_month == "November"] <- 11
+      bookings$arrival_date_month[bookings$arrival_date_month == "December"] <- 12
+      bookings$arrival_date_month <- as.numeric( bookings$arrival_date_month)
+      print(bookings)
+
+
+```
+c)	In the dataset we have three columns "arrival_date_year", "arrival_date_month", "arrival_date_day_of_month". Please create a new column named “arrival_date” which is the combination of the three columns. 
+```{r}
+      arrival_date <- paste( bookings$arrival_date_year , bookings$arrival_date_month, bookings$arrival_date_day_of_month , sep = "-")
+      bookings <- cbind( bookings , arrival_date )
+      print(bookings)
+```
+d)	Check the type of the column “arrival_date”, if it is not “Date”, convert type of values in the column to “Date”. Then remove the columns "arrival_date_year", "arrival_date_month", "arrival_date_day_of_month"
+```{r}
+      typeof( bookings$arrival_date )
+      bookings$arrival_date <- as.Date( bookings$arrival_date , format = "%Y-%m-%d" )
+      print(bookings$arrival_date)
+      bookings <- subset( bookings , select = -c( arrival_date_year, arrival_date_month, arrival_date_day_of_month))
+```
+e)	Create a new column called " weekday_arrival_date ", which is the day of the “arrival_date” in one week (for example, if the arrival_date is 2015-7-1, the corresponding value in the new column " weekday_arrival_date " should be “Wednesday”).
+```{r}
+      Sys.setlocale("LC_TIME","English") #My RStudio is Mandarin ver., hence I add this line.
+      weekday_arrival_date <- weekdays( bookings$arrival_date )
+      bookings <- cbind( bookings , weekday_arrival_date )
+      print(bookings)
+```
+f)	Calculate the mean, standard deviation and range of lead days for observations whose customer arrives on weekdays and observations whose customer arrives on weekends separately.
+#for observations whose arrival date is weekdays
+```{r}
+      bookings_Weekdays <- subset( bookings , !weekday_arrival_date %in% c("Saturday","Sunday"))
+      mean(bookings_Weekdays$lead_time)
+      sd(bookings_Weekdays$lead_time)
+      diff( range ( bookings_Weekdays$lead_time ))
+```
+#for observations whose arrival date is weekends
+```{r}
+      bookings_Weekends <- subset( bookings , weekday_arrival_date %in% c("Saturday","Sunday"))
+      mean(bookings_Weekends$lead_time)
+      sd(bookings_Weekends$lead_time)
+      diff( range ( bookings_Weekends$lead_time ))
+```
+
+
+
+
+

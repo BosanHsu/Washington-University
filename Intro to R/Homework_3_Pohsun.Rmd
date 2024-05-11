@@ -1,0 +1,145 @@
+---
+title: "Homework 3"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+```
+
+##Part 1: Basic Statistic Concepts
+##Question 1:
+##a) Using the hotel_bookings data set, calculate the mean, median, and mode magnitudes of the variable “adr” with only two adults. 
+```{r}
+library(modeest)
+
+      hotel <- read.csv( "hotel_bookings.csv" )
+      two_adults <- hotel[ hotel$adults == 2 , ]
+      mean( two_adults$adr )
+      median( two_adults$adr )
+      mfv( two_adults$adr )
+      
+```
+
+##b) Using the hotel_bookings data set, calculate the maximum and minimum of the variable “adr” with zero baby.
+```{r}
+      no_baby <- hotel[ hotel$babies == 0 , ]
+      max( no_baby$adr )
+      min( no_baby$adr )
+```
+
+##c) Using the hotel_bookings data set, compute the 15th, 55th, and 75th percentiles of the leadtime with no cancellation.
+```{r}
+      no_cancellation <- hotel[ hotel$is_canceled == 0 , ]
+      leadtime_15th <- quantile( no_cancellation$lead_time, 0.15, na.rm = TRUE )
+      leadtime_55th <- quantile( no_cancellation$lead_time, 0.55, na.rm = TRUE )
+      leadtime_75th <- quantile( no_cancellation$lead_time, 0.75, na.rm = TRUE )
+      leadtime_15th
+      leadtime_55th
+      leadtime_75th
+```
+
+##d) Using the hotel_bookings data set, find the five-number quantiles of the leatime with zero week night that the guest wants to stay.
+```{r}
+      zero_week_nights <- hotel[ hotel$stays_in_week_nights == 0 , ]
+      five_number_quantiles_leadtime <- quantile( zero_week_nights$lead_time, probs = c( 0, 0.25, 0.5, 0.75, 1 ), na.rm = TRUE )
+      five_number_quantiles_leadtime
+```
+
+##e) Using the hotel_bookings data set, calculate the sample variance and the sample standard deviation of all the variable “adr”.
+```{r}
+      var( hotel$adr )
+      sd( hotel$adr )
+```
+
+##Part 2: Distribution
+##Question 1: Density function
+##a) If X is distributed N(4,10), find Pr(X<=1).
+```{r}
+      part_2_q1a <- pnorm( 1 , mean = 4 , sd = sqrt( 10 ) )
+      part_2_q1a
+```
+##b) If X is distributed N(-1,3), find Pr(X>0)
+```{r}
+      part_2_q2b <-  1 - pnorm( 0 , mean = -1 , sd = sqrt( 3 ) )
+      part_2_q2b
+```
+##c) If X is distributed N(5,10), find Pr(6<=X<=9)
+```{r}
+      part_2_q3c <-  pnorm( 9 , mean = 5 , sd = sqrt( 10 ) ) - pnorm( 6 , mean = 5 , sd = sqrt( 10 ) )
+      part_2_q3c
+```
+
+##Question 2: Visualize different distributions
+##a) Plot normal distributions with mean=50 and sd=15(only show the part whose x in range 0 to 100).
+```{r}
+      x1 <- seq( 0 , 100 , by = 0.1 )
+      distribtution_1 <- dnorm( x1 , mean = 50 , sd = 15 )
+      plot( x1 , distribtution_1 )
+```
+##b) Plot z distributions with mean=0 and sd=1(only show the part whose x in range -100 to 100).
+```{r}
+      x2 <- seq( -100 , 100 , by = 0.1 )
+      distribtution_2 <- dnorm( x2 , mean = 0 , sd = 1 )
+      plot( x2 , distribtution_2 )  # for z-distribution, the mean will be 0 and the sd will be 1, which are equal to the given number provided by question b
+      
+```
+##c) Plot chisq distributions with df=7(only show the part whose x in range 0 to 50). 
+```{r}
+      x3 <- seq( 0 , 50 , by = 0.1 )
+      plot( x3 , dchisq( x3 , 7 ))
+```
+##d) Plot t distributions with df=7(only show the part whose x in range -10 to 10). 
+```{r}
+      x4 <- seq( -10 , 10 , by = 0.1 )
+      plot( x4 , dt( x4 , 7 ))
+```
+##e) Plot F distributions with df1=5, df2=10(only show the part whose x in range 0 to 10).
+```{r}
+      x5 <- seq( 0 , 10 , by = 0.1 )
+      plot( x5 , df( x5 , 5 , 10 ))
+```
+##Part 3: Central Limit Theorem and Confidence Interval
+##Question 1: Use Central Limit Theorem to evaluate mean
+##A teacher wants to test all of the 10th-grade students at his school to gauge their basic mathematical understanding, but the photocopier breaks after making only six copies of the test. With no other choice, he chooses six students at random to take the test. Their results, recorded as a score out of 100, have a sample mean of 80. The standard deviation of the marks of this test is known to be 15.
+##a)	Find the standard error associated with the mean test score.
+```{r}
+      std.err <- 15 / sqrt( 6 ) # std err = pop std deviation / sqrt size
+      std.err
+```
+##b) Assuming the scores themselves are normally distributed, evaluate the probability that the mean score lies between 80 and 90 if the teacher took another sample of the same size. (use the pnorm function)
+```{r}
+      prob_mean <-  pnorm( 90 , mean = 80 , sd = std.err ) - pnorm( 80 , mean = 80 , sd = std.err )
+      prob_mean
+```
+##c) A student who gets less than 60 receives a failing grade (F). Find the probability that the average score is an F based on another sample of the same size.
+```{r}
+      prob_fail <- pnorm( 60 , mean = 80 , sd = std.err )
+      prob_fail
+```
+
+##Question 2: evaluate Confidence Interval in different situations
+##A casual runner records the average time it takes him to sprint 100 meters. He completes the dash 50 times under identical conditions and finds that the mean of these is 18 seconds. Assume that he knows the standard deviation of his runs is σ_X = 1.53 seconds.
+##d) Construct and interpret a 95 percent confidence interval for the true mean time.
+```{r}
+      mean_time <- 18
+      σ_X <- 1.53     #population std d 
+      CI95 <- c( mean_time - 1.96 *( σ_X / sqrt( 50 )) , mean_time + 1.96 *( σ_X / sqrt( 50 ) ) )
+      CI95
+```
+##e) Repeat (d), but this time, assume that the standard deviation is not known and that s = 1.53 is estimated from the sample. How, if at all, does this change the interval?
+```{r}
+      s =1.53       #sample std d
+      pop_s = 1.53 * 49 / 50
+      CI95_2 <- c( mean_time - 1.96 *( pop_s / sqrt( 50 )) , mean_time + 1.96 *( pop_s / sqrt( 50 ) ) )
+      CI95_2
+```
+
+
+
+
+

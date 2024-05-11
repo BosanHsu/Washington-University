@@ -1,0 +1,208 @@
+---
+title: "Lab 4 Inferential Statistics with R"
+output: You can share RMD file. 
+---
+
+Part 1: Hypothesis testing
+Question 1
+Please load the "hotel_bookings.csv" dataset first. The “hotel_bookings” dataset is a sample of all hotel booking orders. In this question, we want to know whether the population cancel rate (CR) is 0.422 but we are not sure about the population parameters, but just the first half of the data is enough for you to prove your idea. One way to solve the problem is to carry out a hypothesis test. Follow the 6-step procedure and write out your answers step by step. (We assume significance level alpha=0.05)
+
+load the dataset
+```{r}
+data1 <- read.csv("hotel_bookings.csv")
+head(data1)
+```
+
+a) Step1: Problem Definition.
+# Answer:Test whether the cancel rate(CR) is 0.422 or not.
+      
+
+b) Step2: Null and Alternative hypothesis.
+# Answer:H0: μ_CR = 0.422;     H1: μ_CR ≠ 0.422
+
+c) Step3: Select statistic.
+# Answer:Population parameters are unknown, sample size is greater than 30, only one population and mean involved. Choose one-sample z-test
+
+d)	Step4: Calculate statistic value and p-value.
+```{r}
+#Create z.test function
+      
+      z.test <- function( x , mu , s_sd ){
+        one.tail.p <- NULL
+        z.score <- ( mean( x ) - mu ) / ( s_sd / sqrt( length( data1 ) ) )
+        one.tail.p <- pnorm( abs( z.score ) , lower.tail = FALSE )
+        cat( "z =" , z.score , "\n" , 
+             "p-value", 2 * one.tail.p )
+      }
+      # use two-tailed test, z = ( sample mean - hypo mean ) / ( s / sqrt( N ) ) #
+      
+```
+
+```{r}
+#Calculate statistic needed 
+      s_sd <- sd( data1$is_canceled ) #sample sd
+      statistic_values <- z.test( data1$is_canceled , 0.422 , s_sd )
+      
+```
+
+e) Step5: Compare p-value with significance level
+```{r}
+# Answer: Since it is a two tailed test, the p-value for a two tailed test here is less than significance level 0.05.
+      z.score <- ( mean( data1$is_canceled ) - 0.422 ) / ( s_sd / sqrt( length( data1 ) ) )
+      one.tail.p <- pnorm( abs( z.score ) , lower.tail = FALSE )
+      s_lv <- 0.05
+      if (2 * one.tail.p < s_lv) {
+        conclusion <- "With 95% of confidence, we could reject the null hypothesis that the cancel rate is         0.422. "
+      } else {
+          conclusion <- "With 95% of confidence, we fail to reject the null hypothesis that the cancel rate           is 0.422. "
+      }
+```
+f) Step6: Draw Conclusion
+```{r}
+# Answer: With 95% of confidence, we could reject the null hypothesis that the cancel rate is 0.422. 
+      cat( conclusion )
+```
+
+
+Question 2
+Boost company recently generates a new technology to increase the production of steel. To test if this new technology is useful, Boost uses two groups of same machines with similar productions, and apply one group of machines with the new technology. You got the results for each of the machines in the two groups below:
+Group A (Original Machine): 78.1 72.4 76.2 74.3 77.4 78.4 76.0 75.5 76.7 77.3
+Group B (Machine with New Technology): 79.1 81.0 77.3 79.1 80.0 79.1 79.1 77.3 80.2 82.1
+Assuming alpha is 0.05. Does the new technology increase production? Follow the 6-step procedure and write out your answers step by step.
+
+
+a) Step1: Problem Definition.
+# Answer: The problem is to determine whether the new technology introduced by Boost company is useful in increasing the production of steel or not.
+      
+
+b) Step2: Null and Alternative hypothesis.
+# Answer:H0: The new technology does not increase the production of steel.
+# Alternative hypothesis (Ha): The new technology increases the production of steel.
+
+c) Step3: Select statistic.
+# Answer: We can use a two-sample t-test to compare the means of the two groups and determine whether there is a significant difference between them.
+
+d) Step 4: Calculate the Statistic Value and p-value
+# We can use the `t.test()` function in R to calculate the test statistic and p-value for the two-sample t-test. Using the data provided, we can run the following code:
+```{r}
+group_a <- c(78.1, 72.4, 76.2, 74.3, 77.4, 78.4, 76.0, 75.5, 76.7, 77.3)
+group_b <- c(79.1, 81.0, 77.3, 79.1, 80.0, 79.1, 79.1, 77.3, 80.2, 82.1)
+
+t.test(group_a, group_b, var.equal = TRUE)
+```
+
+The `var.equal = TRUE` argument specifies that we are assuming equal variances in the two groups.
+
+
+The test statistic is t = -4.2957 and the p-value is 0.0004352.
+e) Step 5: Compare p-value with Significance Level
+# We have set the significance level at alpha = 0.05. The p-value (0.0004352) is less than alpha, which means that we reject the null hypothesis and conclude that the new technology increases the production of steel.
+f) Step 6: Draw Conclusion
+# f) Step 6: Draw Conclusion
+# Based on the results of the two-sample t-test, we can conclude that the new technology introduced by Boost company is useful in increasing the production of steel. The mean production of the Group B machines with the new technology (mean = 79.43) is significantly higher than the mean production of the Group A machines without the new technology (mean = 76.23) at the 0.05 significance level. The 95% confidence interval for the difference in means is (-4.765026, -1.634974), which does not include zero, further supporting the conclusion that the new technology is effective in increasing the production of steel.
+
+Part 2: Analysis of Variance (ANOVA)
+Question 1 Please load the "hotel_bookings.csv" dataset first. In this question, we want to know whether the order was canceled (Variable: "is_canceled") will affect booking days in advance (Variable: "lead_time"). You need to carry out a hypothesis test by one-way ANOVA (We assume significance level alpha=0.05). 
+
+The null hypothesis is that the booking days in advance of cancellation are the same. The alternative hypothesis is that the booking days in advance of cancellation are not the same. (Hint: You don't need to check the outliers of "lead_time".)
+
+load the dataset
+```{r}
+hotel_bookings <- read.csv("hotel_bookings.csv")
+head(hotel_bookings)
+```
+
+a)	Produce a boxplot of booking days in advance and cancellation using ggplot2.
+```{r}
+library(ggplot2)
+hotel_bookings$is_canceled_tag <- ifelse(hotel_bookings$is_canceled == 0, "Not Canceled", "Canceled")
+ggplot(data = hotel_bookings, aes(x = is_canceled_tag, y = lead_time)) + 
+  geom_boxplot() +
+  labs(x = "Cancellation Status", y = "Lead Time")
+   ```
+
+b)	Calculate the total variance MST.
+```{r}
+MS_T <- var(hotel_bookings$lead_time)
+MS_T
+```
+
+c)	Calculate the variance within the groups MSW.
+```{r}
+
+lead_time <- hotel_bookings$lead_time
+
+library(dplyr)
+var_lead_time_canceled <- var(hotel_bookings$lead_time[hotel_bookings$is_canceled == 1])
+var_lead_time_not_canceled <- var(hotel_bookings$lead_time[hotel_bookings$is_canceled == 0])
+n_canceled <- length(hotel_bookings$lead_time[hotel_bookings$is_canceled == 1])
+n_not_canceled <- length(hotel_bookings$lead_time[hotel_bookings$is_canceled == 0])
+MS_W <- (var_lead_time_canceled * (n_canceled - 1) + var_lead_time_not_canceled * (n_not_canceled - 1))/(n_canceled + n_not_canceled -2)
+MS_W
+```
+
+d)	Calculate the variance between sample means MSB.
+```{r}
+mean_lead_time <- mean(hotel_bookings$lead_time)
+
+mean_lead_time_canceled <- mean(hotel_bookings$lead_time[hotel_bookings$is_canceled == 1])
+mean_lead_time_not_canceled <- mean(hotel_bookings$lead_time[hotel_bookings$is_canceled == 0])
+
+MS_B <- (n_canceled * (mean_lead_time_canceled - mean_lead_time)^2 + n_not_canceled * (mean_lead_time_not_canceled - mean_lead_time)^2)/(2-1)
+MS_B
+```
+
+e)	Calculate and compare the test statistic F and the critical F at α = .05. What's the conclusion?
+```{r}
+df_msb <- 1
+df_msw <- nrow(hotel_bookings) - 2
+F_value <- MS_B / MS_W
+critical_F <- qf(p = (1 - 0.05), df1 = df_msb, df2 = df_msw)
+
+if (F_value > critical_F) {
+  cat("The test statistic F =", round(F_value, 2), "is greater than the critical F value =", round(critical_F, 2), "so we reject the null hypothesis and conclude that the booking days in advance of cancellation are not the same.")
+} else {
+  cat("The test statistic F =", round(F_value, 2), "is less than or equal to the critical F value =", round(critical_F, 2), "so we fail to reject the null hypothesis.")
+}
+
+```
+
+f)	Use function aov() to do one-way ANOVA. According to the result, what can you conclude?
+```{r}
+anova_result <- aov(lead_time ~ is_canceled, data = hotel_bookings)
+summary(anova_result)
+```
+
+
+Question 2 
+In the question, you need to test the effect of deposit type (Variable: "deposit_type") and cancellation on booking days in advance. (We assume significance level alpha=0.05)
+a)-------------------------------------------
+# 1. Effect of deposit type on booking days in advance:
+#  - Null hypothesis: There is no significant difference in the mean booking days in advance between the different deposit types.
+#  - Alternative hypothesis: There is a significant difference in the mean booking days in advance between the different deposit types.
+
+# 2. Effect of cancellation on booking days in advance:
+#  - Null hypothesis: There is no significant difference in the mean booking days in advance between the canceled and not canceled bookings.
+#  - Alternative hypothesis: There is a significant difference in the mean booking days in advance between the canceled and not canceled bookings.
+
+# 3. Interaction effect between deposit type and cancellation on booking days in advance:
+#  - Null hypothesis: The effect of deposit type on booking days in advance is the same for both canceled and not canceled bookings.
+#  - Alternative hypothesis: The effect of deposit type on booking days in advance is different for canceled and not canceled bookings.
+-------------------------------------------
+b) Use function aov() to do two-way ANOVA for three hypothesis tests. What's your conclusion?
+```{r}
+model <- aov(lead_time ~ deposit_type * is_canceled, data = hotel_bookings)
+summary(model)
+```
+
+# Based on the output of the ANOVA table, we can see that all three factors (deposit_type, is_canceled, and the interaction effect of deposit_type and is_canceled) are statistically significant at the 0.05 level, as indicated by the extremely low p-values (< 2e-16).
+# The F-values are also high for all three factors, indicating that the variability between groups is much larger than the variability within groups.
+# Therefore, we can conclude that there are significant effects of deposit_type, is_canceled, and the interaction between the two on the booking days in advance variable.
+
+
+If you have any questions or comments, please contact me at salihtutun@wustl.edu. 
+
+Salih Tutun
+
+
+

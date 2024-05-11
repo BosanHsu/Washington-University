@@ -1,0 +1,248 @@
+---
+title: "Lab 2 Programming in R"
+output: pdf_document
+---
+
+Part 1:Conditional Statement
+Question 1: In a lottery with number from 0 to 100, one will receive an "Apple" with a number less than 30 or greater than 90, or a "Banana" with a number greater than 40, or a "Cat" with the remaining number. Write a lottery_prize function so that with input of the lottery number, an output of prize would be shown. Notice if an out of range number shows, it should provide a warning "Fake Lottery Number." and prize should be 0.
+```{r}
+lottery_prize <- function(x) {
+  if (x < 0 | x > 100) {
+      cat("Fake Lottery Number.\n")
+      cat(paste("Prize of lottery number", x, "is 0 \n" ))
+ } else if (x < 30 | x > 90) {
+      cat(paste("Prize of lottery number", x, "is Apple \n"))
+ } else if (x > 40) {
+      cat(paste("Prize of lottery number", x, "is Banana \n"))
+ } else {
+        cat(paste("Prize of lottery number", x, "is Cat \n"))
+  }
+}
+
+
+```
+
+```{r}
+# According to the requirement, if a is sent into lottery_prize(), a>100 or a<0 will result in 0, 0<= a < 30 and 90 <a<=100 result in Apple. 40 < a <=90 results in Banana, and 30 <= a <= 40 results in Cat. Some examples are shown as follows.
+lottery_prize(-1)
+lottery_prize(45)
+lottery_prize(100)
+```
+
+Question 2: Load the “hotel_bookings.csv” dataset. Create a binary variable, lead_time01, that contains a 1 if lead_time contains a value above or equal to its median, and a 0 if lead_time contains a value below its median. You need to use the following two ways to create the new column.
+(Hint: You can compute the median using the median() function)
+```{r}
+bookings <- read.csv("hotel_bookings.csv")
+median_lead_time <- median(bookings$lead_time)
+```
+
+a)	Write a custom function that can be used to check whether the value if above the median first and then use the sapply function to create the new column. 
+```{r}
+check_function <- function(value, median) {
+  if (value >= median) {
+    return(1)
+  } else {
+    return(0)
+  }
+}
+
+bookings$lead_time01 <- sapply(bookings$lead_time, check_function, median_lead_time)
+```
+
+b)	Use the “ifelse” function to create the new column.
+```{r}
+bookings$lead_time01 <- ifelse(bookings$lead_time >= median_lead_time, 1, 0)
+```
+Part 2:Loop Expressions
+Question 1 Use while loop to calculate value of the sum of even numbers minus the sum of odd numbers from 1 to 100. (Hint: You can calculate the result in this way: -1+2-3+4-5+6+…-97+98-99+100).
+```{r}
+      x = 1
+      sum_P2_q1 <- 0
+      indi <- -1 # Here, I use an indicator as sign of the number.
+      
+      while(x<=100)
+        {
+        sum_P2_q1 <- sum_P2_q1 + indi * x
+        x <- x + 1
+        indi <- indi * (-1)
+      }
+      sum_P2_q1
+```
+
+Question 2
+a) Write a function factorial() that prints out the x factorial x!=x*(x-1)8(x-2)8...*1(Note that: 0! = 1). And then use the function to calculate 0!, 3! and 7!.
+```{r}
+      calculate <- function( x ){
+        if ( x >= 0){
+          i = factorial( x ) 
+        }
+        else {
+          i = print( "error" )
+        }
+        return( i )
+      }
+```
+check answer
+```{r}
+      calculate(0)
+      calculate(3)
+      calculate(7)
+```
+
+b) Write a function to calculate the combination of m and n(C(m,n), m>=n), you can use the formula below to get the combination: C(m,n)=m!/(n!*(m-n)!) 
+```{r}
+      mn <- function( m , n ){ 
+        if ( m >= 0){
+          if( n >= 0){
+            if ( m - n >= 0){
+              i = factorial( m ) / ( factorial( n ) * factorial( m - n ) ) 
+            }
+            else {
+              i = print( "error" )
+            }
+          }
+          else i = print( "error" )
+        }
+        else i = print( "error" )
+        return( i )
+      }
+```
+
+c) Calculate C(5,-1),C(5,1),C(5,2)
+```{r}
+        mn( 5 , -1 )
+        mn( 5 , 1 )
+        mn( 5 , 2 )
+```
+
+Part 3:Data visualization
+In this part, you need to use “ggplot2” package to perform data visualization with the “hotel_bookings.csv” dataset. (Hint: Please make sure you have loaded the “ggplot2” module and the “hotel bookings.csv” dataset)
+```{r}
+library(ggplot2)
+setwd("D:/C_Transfer/Desktop/Zhuoqian_Zhang_WUSTL/COURSES/R/Lab_2")
+# If the path has changed, then this path to the folder shall be changed, too.
+bookings <- read.csv("hotel_bookings.csv")
+
+```
+
+Question 1 
+a) Plot a bar chart of the total booking numbers by hotel type (Variable: "hotel").
+b) Plot a bar chart of the total booking numbers by market segment (Variable: "market_segment").
+c) Change the two bar charts into pie charts.
+```{r}
+# a)
+library(dplyr)
+# Calculate total bookings by hotel type
+hotel_type_bookings <- bookings %>%
+  group_by(hotel) %>%
+  summarize(total_bookings = n())  # Create a data frame containing information about types of hotel and numbers of bookings related.
+
+
+ggplot(hotel_type_bookings, aes(x = hotel, y = total_bookings)) +
+  geom_bar(stat = "identity", fill = "#1F77B4", width = 0.5) +
+  labs(x = "Hotel Type", y = "Total Bookings") +
+  ggtitle("Total Bookings by Hotel Type") +   # The bar chart's title
+  theme(plot.title = element_text(hjust = 0.5)) # Center the title
+# b)
+
+# Calculate total bookings by market segment
+market_segment_bookings <- bookings %>%
+  group_by(market_segment) %>%
+  summarize(total_bookings = n()) # Create a data frame containing information about market segment and numbers of bookings related.
+
+# Create bar chart
+ggplot(market_segment_bookings, aes(x = market_segment, y = total_bookings)) +
+  geom_bar(stat = "identity", fill = "#1F77B4") +
+  labs(title = "Total Bookings by Market Segment", x = "Market Segment", y = "Total Bookings") +
+  theme(plot.title = element_text(hjust = 0.5))
+# c)
+
+# Create pie chart for hotel type
+ggplot(hotel_type_bookings, aes(x = "", y = total_bookings, fill = hotel)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start=0) +
+  labs(title = "Total Bookings by Hotel Type", fill = "Hotel Type", x = NULL, y = NULL) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Create pie chart for market segment
+ggplot(market_segment_bookings, aes(x = "", y = total_bookings, fill = market_segment)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start=0) +
+  labs(title = "Total Bookings by Market Segment", fill = "Market Segment", x = NULL, y = NULL) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Question 2
+b)	Draw a line chart to show the total booking number of each month by hotel type (Variable: "hotel"). (Hint: Please use the new data "booking_month" and the new y variable "booking_number" to draw the line chart).
+```{r}
+install.packages("dplyr") # If the package is already installed, this line of code will not be needed.
+library(dplyr)
+booking <- read.csv("hotel_bookings.csv")
+booking_month <- booking %>% 
+group_by(arrival_date_month, hotel) %>% 
+summarise(booking_number = n(), .groups = "drop") %>% 
+arrange(factor(arrival_date_month, levels = month.name))
+
+# Define a named vector that maps month names to integers
+month_dict <- c(January = 1, February = 2, March = 3, April = 4, May = 5, June = 6,
+                July = 7, August = 8, September = 9, October = 10, November = 11, December = 12)
+
+# Use the dictionary to convert month names to integers
+booking_month$arrival_date_month <- month_dict[booking_month$arrival_date_month]
+month_names <- month.abb
+
+# As the character expression of months cannot be placed into line chart properly, we have to change the character expression of months into integer numbers first. Here I use 1 to 12 to represent January to December separately.
+
+
+# Draw the line chart
+library(ggplot2)
+ggplot(booking_month, aes(x = arrival_date_month, y = booking_number, color = hotel)) +
+  geom_line() +
+  labs(title = "Total Booking Number by Month and Hotel Type",
+       x = "Month",
+       y = "Booking Number",
+       color = "Hotel Type") +
+  scale_x_continuous(breaks = 1:12, labels = month_names) +
+  scale_color_manual(values = c("#69b3a2", "#404080")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+#--------------------------------------------------------------
+
+```
+
+Question 3
+a)	Create a box plot to display the relationship between deposit type (Variable: "deposit_type") and booking days in advance (Variable: "lead_time") with the dataset “hotel_bookings.csv”.
+   
+b)	Create a box plot to display the relationship between cancellation (Variable: "is_canceled") and booking days in advance (Variable: "lead_time") with the dataset “hotel_bookings.csv”.
+```{r}
+# a)
+ggplot(bookings, aes(x = deposit_type, y = lead_time)) +
+  geom_boxplot() +
+  labs(x = "Deposit Type", y = "Lead Time") +
+  ggtitle("Relationship Between Deposit Type and Lead Time") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# b)
+# Create a new variable "cancellation" based on "is_canceled", if nothing is done, the ggplot() function cannot recognize two groups out of 01 vector of bookings$is_canceled.
+bookings$cancellation <- ifelse(bookings$is_canceled == 0, "Not Canceled", "Canceled") 
+
+
+ggplot(bookings, aes(x = cancellation, y = lead_time)) +
+  geom_boxplot() +
+  labs(x = "Cancellation", y = "Lead Time") +
+  ggtitle("Relationship Between Cancellation and Lead Time") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+
+
+
+
+
+

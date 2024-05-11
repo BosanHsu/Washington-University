@@ -1,0 +1,160 @@
+---
+title: "Homework 5 Linear Regression and Modelling"
+author: "Salih Tutun, Ph.D."
+date: "3/10/2022"
+output: pdf_document
+---
+
+Part 1: Houseprice regression Analysis
+a)	Load the “Houseprice.csv” data set. Generate Paired Scatter Plots and calculate the Correlation Coefficient between “saleprice” and the six variables below: MSSubClass, LotArea, OverallQual, OverallCond, YearBuilt, LowQualFinSF. Describe your findings and report variables whose correlation with saleprice is higher than 0.5.
+```{r}
+      house_price <- read.csv( "Houseprice.csv" )
+      
+      sample_data <- data.frame( house_price$SalePrice , house_price$MSSubClass , house_price$LotArea , factor( house_price$OverallQual ) , factor( house_price$OverallCond ) , factor( house_price$YearBuilt ) , house_price$LowQualFinSF )
+      
+      boxplot( sample_data )
+      outliers <- boxplot( sample_data )$out
+      sample_data <- sample_data[ !sample_data %in% outliers ]
+      
+      pairs( sample_data )
+      
+      correlations <- cor( sample_data [ , -which( names( sample_data ) == "SalePrice" ) ], sample_data$SalePrice )
+      strong_cor <- names( correlations[ correlations > 0.5 ] )
+      strong_cor
+      
+      # Given by the plots, it shows that:
+      # SalePrice has positive correlation with OverallQual, OverallCon, YearBuilt; and            merely has correlation with the other variables. However, the R Square shows that it         has no significant effidence to show the relationships between SalePrice and any other       variables. 
+```   
+
+
+b)	OverallQual is a variable used for measuring the overall material of the house(In this dataset 10 means excellent and 1 means poor). Calculate the number of salesprice in each of the OverallQual and plot a side-by-side boxplots of “saleprice” split by “OverallQual”. (Hint: You can use table() to calculate the number of sales).
+```{r}
+      OverallQual <- house_price$OverallQual
+      SalePrice <- house_price$SalePrice
+      
+      sales_counts <- table( OverallQual )
+      sales_counts
+      
+      library( ggplot2 )
+      
+      ggplot( data = sample_data , aes( OverallQual , SalePrice ) ) + labs(x = "OverallQual", y = "SalePrice") + ggtitle( "Boxplot of SalePriceby OverallQual") 
+
+      
+      
+      
+```
+c)	Do you think it is a good way to directly use “OverallQual” in the regression? If not how to deal with the problem? (Hint:think of what we have discussed in lab.) 
+## No, Because it is meaningless to multiple the coeffecient with a certain quality. The interpretation is deteriorated. It is bettter to change them into dummy variables or a variable with true meaning in multipication (like the first year/ second year... since the opening). But if we only care about the prediction, not the interpretation, and there are many predictors, sometimes we may keep it.
+
+d) Run a simple regression to estimate “saleprice” with “OverallQual”. Note that you need to take your answer in question c into consideration.  
+```{r}
+      reg_model <- lm( SalePrice ~ factor( OverallQual ) )
+
+```
+
+
+e)	Run a simple regression to estimate “saleprice” with the variables reported in question (a). Interpret the result as we discussed in video and lab. 
+```{r}
+      house_price$OverallQual <- factor( house_price$OverallQual )
+      house_price$OverallCond <- factor( house_price$OverallCond )
+      house_price$YearBuilt <- factor( house_price$YearBuilt )
+
+      reg_model_a <- lm( SalePrice ~ MSSubClass + LotArea + OverallQual + OverallCond + as.factor(YearBuilt) + LowQualFinSF , data = house_price )
+      reg_model_a
+      
+      # Saleprice would be -208200 if there are no other variables. 
+      # AS MSSubClass increase by one unit, Saleprice would decrease by 155.9 units as well.
+      # AS LotArea increase by one unit, Saleprice would increase by 1.373 units as well.
+      # AS OverallQual increase by one unit, Saleprice would increase by 38830 units as well.
+      # AS OverallCond increase by one unit, Saleprice would increase by 3520 units as well.
+      # AS LowQualFinSF increase by one unit, Saleprice would increase by 27.48 units as well.
+      # The YearBuilt have affect the SalePrice differently every year.
+```
+
+f)	(Optional) Compared the results of question c, what is the advantage and the disadvantage of model d?
+# let us calculate the correlation between the two predictors
+```{r}
+      no_dummy <- cor( OverallQual , SalePrice )
+      no_dummy
+      
+      with_dummy <- coef( reg_model )
+      with_dummy
+      
+      # The advantage of model d is that it clearly shows how much do every level of OverallQual affects SalePrice exactly, however, it merely shows the correlation between OverallQual and SalePrice
+```
+
+
+Part 2: Cats Analysis
+MASS is a package that support a variety of datasets for statistical learning. In this problem we will use the dataset "cats" in MASS. The data includes sex, body weight (in kilograms), and heart weight (in grams) for 144 household cats. You can use the help method in R to learn more about the dataset cats.
+
+a)	Load the dataset using the code below and print out the head of the dataset.
+```{r}
+library("MASS")
+head( cats )
+```
+b)	b)	Use scatter plot to show the relationship between the heart weight(Hwt) and body weight(Bwt) among male cats and the relationship among female cats. You can use point() to distinguish between male and female cats. Hint: plot() points(cats$Hwt[cats$Sex == "M"] ~ cats$Bwt[cats$Sex == "M"],col = "Blue"). There is no comma or space between plot() and points().
+```{r}
+      plot(cats$Hwt,cats$Bwt)
+      points(cats$Hwt[cats$Sex == "M"] ~ cats$Bwt[cats$Sex == "M"],col = "Blue")
+```
+c)	Run a simple linear regression model using heart weight as the response variable and body weight as predictor. What is the relationship between the heart weight and the body weight?
+```{r}
+      heartXbody <- lm( Hwt ~ Bwt , cats )
+      summary( heartXbody )
+      # Heart weight would increased by 4.0341 units when there is an addtional unit of the body weight.
+```
+
+
+d) Plot the relationship between the heart weight(Hwt) and body weight(Bwt) and add the fitted line to the plot Tips: We can use abline() or ggplot2 to do so.
+```{r}
+      plot <- plot(cats$Bwt, cats$Hwt, main = "Heart Weight vs. Body Weight", 
+        xlab = "Body Weight (kg)", ylab = "Heart Weight (g)")
+
+##abline()
+      fit <- lm(Hwt ~ Bwt, data = cats)
+      plot(cats$Bwt, cats$Hwt, main = "Heart Weight vs. Body Weight", 
+     xlab = "Body Weight (kg)", ylab = "Heart Weight (g)")
+      abline(plot, col = "red")
+
+##ggplot2
+library(ggplot2)
+      ggplot(cats, aes(x = Bwt, y = Hwt)) +
+        geom_point() +
+        geom_smooth(method = "lm", color = "red") +
+        labs(title = "Heart Weight vs. Body Weight",
+        x = "Body Weight (kg)", y = "Heart Weight (g)")
+
+```
+e)	Now we take the sex into consideration. Fit a least-squares multiple linear regression model using heart weight as the response variable and the other two variables as predictors (do not include interections), and interpret the results. Think about the equation, F-test, t-test, R squared and multiple R squared. You do not need to interpret the coefficients here.  
+```{r}
+      OLS <- lm( Hwt ~ Bwt + as.factor(Sex) , cats )
+      summary( OLS )
+      
+      # By F-Test, the formula is significant.
+      # By T-Test, only body weight has significant effect on heart weight.
+      # By adjusted R-squared, there are 64.18% of changes in heart weight can be explained by the formula.
+```
+
+
+f)	Run a multiple linear regression model with an interaction term. Report and intepret this fitted model.  
+```{r}
+      OLS_2 <- lm( Hwt ~ Bwt * as.factor(Sex) , cats )
+      summary( OLS_2 )
+      # By F-Test, the formula is significant.
+      # By T-Test, all variables have significant effect on heart weight.
+      # By adjusted R-squared, there are 64.93% of changes in heart weight can be explained by the formula.
+      # The heartweight would increase approximately by 2.63 units when there is an addtional unit of bodyweight: would decrease approximately by 4.17 units when the cat is a male; would increase approximately by 1.68 units when there is an addtional unit of bodyweight and the cat is a male as well.
+```
+ 
+
+g)	Compared with the model obtained from c,d and f. Which model do you think is the most convincing and why?
+## The model obtained from question f is most convincing. As it includes the interection. After interection was included, the coefficients are statistically significant and meantime the  multiple R squared has increased 1%. 
+
+h)	Use the model you selected from questions g to interpret to predict the heart weight of a male cat with 5kg body weight. and provide a 95 percent prediction interval. Recall that argument of "newdata" in predict() should be a data frame. newdata = data.frame(Bwt = (), Sex = ("").
+```{r}
+      new_data <- data.frame(Bwt = 5, Sex = "M")
+      prediction <- predict(fit, newdata = new_data, interval = "prediction", level = 0.95)
+      cat("Predicted Heart Weight:", prediction[1], "g\n")
+      cat("95% Prediction Interval:", prediction[2], "g to", prediction[3], "g\n")
+```
+

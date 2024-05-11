@@ -1,0 +1,209 @@
+---
+title: "Lab 5 Linear Regression and Modelling"
+author: "Salih Tutun, Ph.D."
+output: You can share the RMD file. 
+---
+
+Part 1: Data Preprocessing and Exploratory Analysis
+a)	Load the “hotel_bookings.csv” data set. Filter out the data where the column “adr” (Average Daily Rate) is not 0, and remove all the null value in the new data set whose name is “bookings”. How many rows are there in the new data set “bookings”?
+```{r}
+# Load the dataset
+booking <- read.csv("hotel_bookings.csv")
+
+# Filter the data where "adr" is not 0
+bookings <- booking[booking$adr != 0, ]
+# Replacing all "NULL" strings with NA
+bookings <- replace(bookings, bookings == "NULL", NA)
+# Remove rows with null values
+bookings <- na.omit(bookings)
+
+# Count the number of rows in the new dataset
+num_rows <- nrow(bookings)
+print(paste("There are",num_rows,"rows in the new dataset."))
+```
+
+
+b)	Perform exploratory analysis on the new data set. (e.g calculate the mean, median and standard deviation of the column “adr”, you can turn to the optional question in homework2 as reference). Are there any outliers in “adr” column? If there are, remove the outliers in the column “adr”.
+```{r}
+# Calculate the mean, median, and standard deviation of "adr"
+mean_adr <- mean(bookings$adr)
+median_adr <- median(bookings$adr)
+sd_adr <- sd(bookings$adr)
+
+# Check for outliers in "adr" using boxplot
+boxplot(bookings$adr, main = "Boxplot of adr")
+
+
+```
+
+```{r}
+# Identify outliers
+outliers <- boxplot.stats(bookings$adr)$out
+
+# Remove outliers
+bookings <- bookings[!bookings$adr %in% outliers, ]
+```
+
+
+
+c)	In this case, which one do you think is more representative for the variable “adr”, mean or median? Why? 
+# The choice between mean and median as a representative measure for the variable "adr" depends on the distribution of the data and the presence of outliers. 
+
+# - Mean: The mean is sensitive to outliers since it takes into account all the values in the dataset. If there are outliers present, they can significantly influence the mean and make it less representative of the central tendency.
+
+# - Median: The median is a robust measure of central tendency that is less affected by outliers. It represents the middle value when the data is sorted in ascending order. Therefore, if there are outliers in the "adr" column, the median can provide a more representative measure of the typical value.
+
+# If the outliers exists, then median is a way that is less affected by outliers, but if outliers are also important in this case, we also have to refer to mean value.
+
+# In this case, we suggest that median is more representative for the variable “adr”. Since there are outliers above confidence interval, mean would be lareger than median. Thus, to show central tendancy, median would be more accurate.
+
+d)	Generate Paired Scatter Plots and calculate the Correlation Coefficient between “adr” and variables. Describe your findings.
+```{r}
+# We only consider numeric_variables
+numeric_vars <- sapply(bookings, is.numeric)
+numeric_cols <- colnames(bookings)[numeric_vars]
+
+
+nonzero_sd_cols <- numeric_cols[apply(bookings[, numeric_cols], 2, sd) != 0]
+
+# All the correlation coefficients
+correlation_total <- cor(bookings$adr, bookings[, nonzero_sd_cols])
+
+sorted_indices <- order(abs(correlation_total), decreasing = TRUE)
+sorted_correlation <- correlation_total[sorted_indices]
+# sorted correlation according to absolute value
+print(sorted_correlation)
+
+print(correlation_total)
+
+print("According to correlation, lead_time, arrive_date_year, arrive_date_day_of_month, adults, children, is_repeated_guest, previous_bookings_not_canceled, total_of_special_requests are positively correlated with adr while the other variables are negatively correlated with adr.")
+```
+```{r}
+# All the scatter plots of adr and other variables.
+for (col in numeric_cols) {
+  plot(bookings$adr, bookings[[col]], xlab = "adr", ylab = col)
+}
+```
+```{r}
+# pairwise scatter plots.
+pairs(bookings[c("adr", "arrival_date_year", "adults", "total_of_special_requests" , "arrival_date_week_number")])
+```
+```{r}
+cor_lead_time <- cor(bookings$adr, bookings$lead_time)
+cor_arrival <- cor(bookings$adr, bookings$arrival_date_week_number)
+cor_arrival_date <- cor(bookings$adr, bookings$arrival_date_day_of_month)
+
+cor_lead_time
+cor_arrival
+cor_arrival_date
+```
+```{r}
+print("According to correlation, arrival_date_year, adults, total_of_special_requests and arrival_date_week_number have the biggest absolute value.")
+```
+
+
+
+## These are the results of 4 variables with the highest Correlation Coefficient (in absolute value). However, the correlations are all not very strong. 
+
+Part 2: Linear Regression Analysis
+e)	Run a simple regression to estimate “adr” with “adults”. How to interpret the result? (Consider F Test, T Test and R-Squared). 
+```{r}
+# Simple regression: adr ~ adults
+regression_result <- lm(adr ~ adults, data = bookings)
+
+# Interpretation of the result
+summary(regression_result)
+```
+# Interpretation:
+
+#    Coefficients: The coefficient estimates indicate the relationship between the predictor variable ("adults") and the response variable ("adr"). The estimated regression equation is:
+
+#    adr = 24.878 + 24.776 * adults
+
+#    The coefficient for "adults" is 24.776, indicating that for each additional adult, the estimated "adr" value increases by 24.776 units.
+
+#    t-value and p-value: The t-value measures the significance of the coefficient estimate. The p-value associated with the t-value determines the statistical significance. In this case, the coefficient for "adults" has a t-value of 7.424 and a very small p-value of 3.02e-12 (much smaller than the typical significance threshold of 0.05). This suggests that the coefficient is statistically significant, indicating a strong evidence of a relationship between "adults" and "adr".
+
+#    F-statistic and p-value: The F-statistic tests the overall significance of the regression model. The associated p-value determines the overall statistical significance. In this case, the F-statistic is 55.12 with a very small p-value of 3.024e-12. This indicates that the regression model as a whole is statistically significant, suggesting that the predictor variable "adults" provides valuable information in explaining the variation in "adr".
+
+#    R-squared and Adjusted R-squared: The R-squared value (0.2127) represents the proportion of the variance in the response variable ("adr") that can be explained by the predictor variable ("adults"). It indicates the goodness-of-fit of the model. In this case, 21.27% of the variation in "adr" can be explained by the variation in "adults". The Adjusted R-squared value (0.2089) adjusts the R-squared value for the number of predictors in the model.
+
+# In summary, the regression analysis suggests that the number of adults ("adults") is a statistically significant predictor of the average daily rate ("adr"). The positive coefficient indicates that an increase in the number of adults is associated with an increase in the estimated "adr" value. However, it's important to note that the model explains only a relatively small portion of the variation in "adr" (21.27%), indicating that other factors beyond the number of adults may also influence the average daily rate.
+
+f)	Run a multiple regression to estimate “adr” with reasonable predictors. The adjusted Adjusted R-squared should be at least 0.4. Interpret the result. (Hint: you need to use categorical variables).
+```{r}
+regression_result <- lm(adr ~ arrival_date_year + adults +  total_of_special_requests + arrival_date_week_number, data = bookings)
+
+# Interpretation of the result
+
+summary(regression_result)
+
+```
+
+# Interpretation
+#    Coefficients: The coefficients represent the estimated effect of each predictor variable on the response variable ("adr").
+#        The coefficient for arrival_date_year is 16.94. This suggests that, holding all other variables constant, each unit increase in arrival_date_year is associated with an estimated increase of 16.94 units in the "adr" value.
+#        The coefficient for adults is 21.97. This indicates that, on average, each additional adult in the booking is associated with an estimated increase of 21.97 units in the "adr" value.
+#        The coefficient for total_of_special_requests is 12.46. This implies that, on average, each additional special request made by the guests is associated with an estimated increase of 12.46 units in the "adr" value.
+#        The coefficient for arrival_date_week_number is not statistically significant (p-value > 0.05), suggesting that this variable may not have a significant impact on the "adr" value.
+
+#    p-values: The p-values associated with each coefficient indicate the statistical significance of the corresponding predictor variable.
+#       The p-value for arrival_date_year is less than the chosen significance level (e.g., 0.05), indicating that it is statistically significant.
+#        The p-value for adults is also less than the significance level, indicating its statistical significance.
+#        The p-value for total_of_special_requests is less than the significance level, indicating its statistical significance.
+#        The p-value for arrival_date_week_number is greater than the significance level, suggesting it is not statistically significant.
+
+#    Adjusted R-squared: The Adjusted R-squared value is 0.542. This indicates that the selected set of variables (arrival_date_year, adults, total_of_special_requests, and arrival_date_week_number) collectively explains approximately 54.2% of the variability observed in the "adr" values. The remaining variation is attributed to other factors not included in the model.
+
+#Overall, this interpretation suggests that variables such as arrival_date_year, adults, and total_of_special_requests have a statistically significant impact on the "adr" values, while arrival_date_week_number does not appear to have a significant effect. The model explains a reasonable amount of the variability in "adr", but there may be other important factors influencing "adr" that are not captured by the selected predictors.
+
+g)Some people argue that it is better not to use “arrival_date_year” directly, why do they say so? What’s a more appropriate way to deal with it? In what circumstance do you agree or disagree with him? (Try to argue on both side.)
+Some arguments against using "arrival_date_year" directly in the regression analysis may include:
+
+#    Lack of linear relationship: Treating "arrival_date_year" as a numeric variable assumes a linear relationship between the year and the response variable. However, in some cases, the relationship may not be linear. For example, the effect of the year on the "adr" value may decrease or increase nonlinearly over time.
+
+#    Loss of information: By treating "arrival_date_year" as a numeric variable, the model treats each year as a continuous value. This approach may overlook potentially important patterns or seasonality related to specific years or time periods.
+
+# A more appropriate way to deal with "arrival_date_year" is to consider it as a categorical variable. This approach allows for the exploration of potentially different effects of each year on the "adr" value. Here's how you can handle it:
+
+#    Convert "arrival_date_year" to a categorical variable by creating dummy variables for each year. For example, if you have data for three years (2019, 2020, 2021), you would create two dummy variables (e.g., "year_2020" and "year_2021"), with each variable indicating whether the booking belongs to that specific year or not.
+
+#    Include the dummy variables in the regression model instead of the original "arrival_date_year" variable. This approach allows the model to estimate separate coefficients for each year, capturing potential differences in the effect of each year on the "adr" value.
+
+# When to agree or disagree with not using "arrival_date_year" directly:
+
+# Agree:
+
+#    If there is evidence or domain knowledge suggesting a nonlinear relationship between "arrival_date_year" and "adr," it may be more appropriate to use alternative representations or transformations of the variable.
+#    If there is a specific research question or hypothesis about the impact of individual years on "adr," treating "arrival_date_year" as a categorical variable can provide more nuanced insights.
+
+# Disagree:
+
+#    If the data does not exhibit clear patterns or seasonality related to "arrival_date_year" and there is no specific reason to believe in a nonlinear relationship, treating it as a numeric variable may be simpler and sufficient for the analysis.
+#    If the sample size is small, creating separate dummy variables for each year may lead to overfitting or unstable parameter estimates. In such cases, using "arrival_date_year" directly as a continuous variable can be a practical approach.
+
+
+
+h)In one of the estimated equations, the coefficient of “children” is 29.2 and that of “total_of_special_requests” is 0.8. Does it mean that “children” is a more important predictor that contributes more in the change of “adr”? Why? If no, what’s a more appropriate way to deal with it?
+
+# No, the coefficient values themselves cannot be used to determine the importance or contribution of predictors in the change of "adr" without considering other factors. The magnitude of the coefficient does not necessarily indicate the importance of a predictor variable.
+
+# In the given example, the coefficient of "children" is 29.2, and that of "total_of_special_requests" is 0.8. However, it does not automatically imply that "children" is a more important predictor contributing more to the change in "adr" compared to "total_of_special_requests."
+
+# To assess the relative importance and contribution of predictor variables appropriately, you can consider the following approaches:
+
+# 1. Standardize variables: When predictor variables are on different scales, it becomes challenging to compare their coefficients directly. Standardizing the variables (e.g., subtracting the mean and dividing by the standard deviation) before running the regression can allow for a fairer comparison of the coefficients.
+
+# 1. Evaluate significance: Assess the statistical significance of the coefficients by examining their corresponding p-values. A smaller p-value suggests a higher level of confidence in the association between the predictor variable and the response variable.
+
+# 1. Consider practical significance: Consider the practical or contextual significance of the variables. Even if a predictor variable has a statistically significant coefficient, its practical impact on the "adr" may be negligible. For example, a coefficient may be statistically significant but have a very small magnitude, indicating a minimal effect on the response variable in practical terms.
+
+# 1. Perform feature selection: Employ feature selection techniques (e.g., stepwise regression, LASSO regression, or random forest feature importance) to identify the most important predictors in the model based on their contribution to the model's performance.
+
+# By considering these approaches, you can gain a better understanding of the relative importance of predictor variables and their contributions to the change in "adr." Simply comparing the coefficient values without considering these factors may lead to misleading conclusions about the importance of predictors.
+
+
+
+If you have any questions or comments, please contact me at salihtutun@wustl.edu. 
+
+Salih Tutun

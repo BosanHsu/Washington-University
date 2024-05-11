@@ -1,0 +1,199 @@
+---
+title: "Lab 2 Programming in R"
+output: pdf_document
+---
+
+Part 1:Conditional Statement
+Question1:
+a)	Write a function month_check to check how many days the input month would be. Assume February will always be 28 days no matter what year it is and make sure the input value of month is valid for checking process. Suppose the input is “January”, the return of the function should be 31. 
+Tool: learn how to use %in% to check whether a month is belong to the month with 31 days, 30 days or 28 days. 
+```{r}
+        thirty_one <- c( "January" , "March" , "May" , "July" , "August" , "October" , "December" )
+        thirty <- c( "April" , "June" , "September" , "November" )
+        twenty_eight <- c( "February" )
+
+
+        month_check <- function( month , days ){
+          if( month %in% thirty_one ){
+            days <- 31
+         } else if( month %in% thirty ){
+            days <- 30
+          } else if( month %in% twenty_eight ){
+            days <- 28
+          }
+        }
+        
+        print( month_check( "May" ) )
+        print( month_check( "February") )
+```
+
+b)	Load the “hotel_bookings.csv” dataset and create a new columns called "number_of_days", which shows how many days the arrival_date_month would be(Variable: " arrival_date_month "). 
+Hint: You can use sapply function to change the date
+```{r}
+      read <- read.csv( "hotel_bookings.csv" )
+      number_of_days <- sapply( read[ , 7 ], function(i) i*30 )
+      print( number_of_days )
+      cbind( read , number_of_days )
+```
+
+Question2: 
+a)	Write a function sort_num() to arrange any three different input numbers with random orders into descending order (from the largest to the smallest) using if and else. 
+```{r}
+      sort_num <- function(  a , b , c  ){
+        if( a >= b ){
+          if( a >= c ){
+            if( b >= c ){
+              descend <- c( a , b , c )
+            }
+            else{
+              descend <- c( a , c , b )
+            }
+          }
+          else{
+            descend <- c( c , a , b )
+          }
+        }
+        else if( b >= a ){
+          if( b >= c ){
+            if( a >= c ){
+              descend <-  c( b , a , c ) 
+            }
+            else{
+              descend <-  c( b , c , a )
+            }
+          }
+          else{
+            descend <-  c( c , b , a ) 
+          }
+        }
+      }
+
+
+```
+
+b)	Use the function to test the following three inputs (1) 1,2,3; (2) 5,6,4; (3) 100,97,98(Hint: the function should return the answer as the follows).
+```{r}
+      print( sort_num( 1 , 2 , 3 ) )
+      print( sort_num( 100 , 97 , 98 ) )
+```
+
+Part 2:Loop Expressions
+Question 1: Use for loop to create matrices
+a) Use for loop to create a 3\*4 matrix. Figures inside the matrix are all the product of the row and column indexes. The function should return the answer as the follows. (Hint: The figure in the second row and the third column should be 2\*3=6, while the figure in the fourth row and the second column should be 4\*2=8)
+```{r}
+      numbers <- numeric() 
+
+      for( i in 1:3 ){
+        for( j in 1:4 ){
+          numbers <- c( numbers , paste( i * j ) )
+        }
+      }
+      numbers
+      
+      m <- matrix( numbers , nrow = 3, ncol = 4 , byrow = TRUE )
+      m
+```
+
+b) 	Use for loop to create a 4*4 lower triangular matrix. Figures inside the matrix are either the summation of row and column indexes or 0. For a matrix, if all the entries above the main diagonal are zero, we can call it lower triangular matrix. The function should return the answer as the follows. (Hint: The figure in the third row and the second column should be 3+2=5, while the figure in the second row and the third column should be 0 as the it is above the main diagonal).  
+```{r}
+      numbers_for_tri <- numeric() 
+
+      for( i in 1:4 ){
+        for( j in 1:4 ){
+          if( i >= j ){
+            numbers_for_tri <- c( numbers_for_tri , paste( i + j ) )
+          }
+          else{
+            numbers_for_tri <- c( numbers_for_tri , paste( 0 ) )
+          }
+        }
+      }
+      numbers_for_tri
+      
+      m_t <- matrix( numbers_for_tri , nrow = 4, ncol = 4 , byrow = TRUE )
+      m_t
+```
+
+c) Create a 4*4 upper triangular matrix. Figures inside the matrix are either the summation of row and column indexes or 0. For a matrix, if all the entries below the main diagonal are zero, we can call it upper triangular matrix. The function should return the answer as the follows. (Hint: The figure in the second row and the third column should be 2+3=5, while the figure in the third row and the second column should be 0 as the it is below the main diagonal). 
+```{r}
+      numbers_for_tri_2 <- numeric() 
+
+      for( i in 1:4 ){
+        for( j in 1:4 ){
+          if( i <= j ){
+            numbers_for_tri_2 <- c( numbers_for_tri_2 , paste( i + j ) )
+          }
+          else{
+            numbers_for_tri_2 <- c( numbers_for_tri_2 , paste( 0 ) )
+          }
+        }
+      }
+      numbers_for_tri_2
+      
+      m_t_2 <- matrix( numbers_for_tri_2 , nrow = 4, ncol = 4 , byrow = TRUE )
+      m_t_2
+```
+
+Another way to do so, use the transopose
+```{r}
+      t( m_t ) # m_t is the matrix in Part 2(b)
+```
+
+Part 3: Exploratory Data Analysis(Optional)
+In this part, you need to use R to carry out a simple exploratory data analysis (EDA). The EDA should include following parts.
+a) Glance at first the few rows and check the data types of all variables.
+```{r}
+# Import package and data
+      library(ggplot2)
+      hotel <- read.csv( "hotel_bookings.csv" )
+      head( hotel )
+      str( hotel )
+ 
+```
+
+b) Explore percentage of missing value for all variables.
+```{r}
+      missing_percent <- colMeans( is.na( hotel ) ) * 100
+      missing_percent
+```
+
+c) Descriptive statistics (mean, median, max, min, etc.) for all numeric variables.
+```{r}
+# Select only numeric variables
+      numeric_variables <- hotel[ , sapply( hotel , is.numeric ) ]
+      
+      summary( numeric_variables )
+      
+```
+
+d) Choose a numeric variable as response variable and analyze the distribution of the variable.
+```{r}
+# select "adr"
+# Draw a histogram plot
+      hist( hotel$adr )
+```
+
+e) Find out whether the response variable has outliers.
+```{r}
+# Find outliers
+      outliers <- boxplot.stats( hotel$adr )$out
+      outliers
+
+# 5400 is the outlier, delete the observation
+      hotel <- hotel[ , -( hotel$adr == 5400 )]
+
+# Draw another histogram plot with new data
+      hist( hotel$adr )
+```
+
+f) Evaluate the potential effects of explanatory variables on response variable.
+```{r}
+# "children"
+      plot( hotel$children , hotel$adr )
+
+# "market_segment"
+      plot( hotel$children , hotel$adr )
+
+# "is_canceled"
+      plot( is_canceled , hotel$adr )
+```

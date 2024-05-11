@@ -1,0 +1,180 @@
+---
+title: "Module 4 Lab ANOVA"
+output: pdf_document
+---
+
+Part 1: Hypothesis testing
+Question 1: 
+The Dean office of a university wants to know whether professors in the data science department know more memes than professors in the marketing department. They ran a hypothesis test by handing a meme quiz to 10 unsuspecting professors in the data science department and 15 unsuspecting professors in the marketing department during office hours. The results are listed below:
+
+Scores of Professors in the data science department: 3,7,11,0,7,0,4,5,6,2
+Scores of Professors in the marketing department: 5,5,4,5,4,5,7,2,6,2,2,7,2,2,6
+
+We assume that the population variance of the score of professors in the data science department is 3, while
+the population variance of the score of professors in the Marketing department is 2, and the alpha is 0.05.
+Follow the 6-step procedure and write out your answers step by step.
+
+Step1: Problem Definition
+#### Answer: Test whether professors in the data science department knows more memes than professors in the marketing department.
+
+Step2: Null and Alternative hypothesis
+#### Answer: H0: μ1-μ2 ≤ 0;   H1: μ1-μ2 >  0 
+
+Step3: Select statistic
+#### Answer: Population parameters are known, and two populations and means are involved. Choose two-sample z-test
+
+Step4: Calculate statistic value and p-value
+```{r}
+      DS_Score <- c(3,7,11,0,7,0,4,5,6,2)
+      MKT_Score <- c(5,5,4,5,4,5,7,2,6,2,2,7,2,2,6)
+      
+      
+      z.test <- function( x , y , pop_DS , pop_MKT ){
+          one.tail.p <- NULL
+          std.error <- sqrt( ( pop_DS^2 / length( x ) + pop_MKT^2 / length( y ) ) )
+          z.score <- round( ( mean( x ) - mean( y ) ) / std.error , 3 )
+          one.tail.p <- pnorm( abs( z.score ) , lower.tail = FALSE )
+          cat( " DS's mean = " , mean( x ) , "\n" , " MKT's mean = " , mean( y ) , "\n" ,
+               " z-score = " , z.score , "\n" , " p-value = " , one.tail.p )
+      }
+      
+      z.test( DS_Score , MKT_Score , 3 , 2 )
+```
+
+```{r}
+```
+
+Step5: Compare p-value with significance level
+#### Answer: Since it is a one-tailed test, the p-value here is less than the significance level 0.05.
+      std.error <- sqrt( ( 3^2 / length( DS_Score ) +2^2 / length( MKT_Score  ) ) )
+      z.score <- round( ( mean( DS_Score ) - mean( MKT_Score ) ) / std.error , 3 )
+      one.tail.p <- pnorm( abs( z.score ) , lower.tail = FALSE )
+      significance_lv <- 0.05
+      
+      if (one.tail.p < significance_lv) {
+        conclusion <- "With 95% of confidence, we could reject the null hypothesis professors in the data science department knows more memes than professors in the marketing department. "
+      } else {
+          conclusion <- "With 95% of confidence, we fail to reject the null hypothesis that professors in the data science department knows more memes than professors in the marketing department. "
+      }
+      
+####Step6: Draw Conclusion
+#### Answer: With 95% of confidence, we could not reject the null hypothesis that professors in the data science department do not knows more memes than professors in marketing department.
+      cat ( conclusion )
+Question 2: 
+Cashing company is interested in the efficacy of a drug designed to change resting heart rates in beats per minute (bpm). The resting heart rates of 15 individuals are measured. The individuals then take treatment, and their resting heart rates are again measured. You got the data as the following, assuming the alpha is 0.05:
+
+Original BPM: 52,66,89,87,89,72,66,65,49,62,70,52,75,63,65
+Drug Taken BPM: 51,66,71,73,70,68,60,51,40,57,65,53,64,56,60
+
+Follow the 6-step procedure and write out your answers step by step.
+
+Step1: Problem Definition
+#### Answer: Test whether the drug will change the resting heart rates in bpm.
+
+
+Step2: Null and Alternative hypothesis
+#### Answer:  H0: μ_bpm1 - μ_bpm2 = 0;     H1: μ_bpm1 - μ_bpm2 ≠ 0
+
+Step3: Select statistic
+#### Answer: Data is paired with sample size less than 30, not knowing the parameters. Choose paired t-test.
+
+Step4: Calculate statistic value and p-value
+```{r}
+      Original_BPM <- c(52,66,89,87,89,72,66,65,49,62,70,52,75,63,65)
+      Drug_Taken_BPM <- c(51,66,71,73,70,68,60,51,40,57,65,53,64,56,60)
+      treatment <- Drug_Taken_BPM - Original_BPM
+      
+      avg_no_drug <- mean( Original_BPM )
+      avg_drug <- mean( Drug_Taken_BPM )
+      avg_treat <- mean( treatment )
+      s2 <- sd( treatment ) ^ 2
+      n <- length( Original_BPM ) - 1
+      
+      t = avg_treat / sqrt( s2/n )
+      c( avg_treat , s2 , n , t )
+      t.test( Original_BPM , Drug_Taken_BPM , conf.level = .95 , alternative = "greater" , paired = TRUE)
+      
+```
+
+
+Step5: Compare p-value with significance level
+#### Answer: The p-value here is less than the significance level of 0.05.
+      The test interprets that t = 4.8445 and the p-value is 0.00013
+      0.00013 < 0.05
+      
+Step6: Draw Conclusion
+#### Answer: With 95% of confidence, we could reject the null hypothesis that drug will not change the resting heart rate in bpm. 
+      With 95% of confidence, we could reject the null hypothesis that drug will not change the resting heart rate in bpm.
+
+Part 2: Analysis of Variance (ANOVA)
+Question 1: 
+Please load the "hotel_bookings.csv" dataset first. In this question, we want to know whether hotel type (Variable: "hotel") will affect average daily rate (Variable: "adr"). We will do a hypothesis test in terms of variances by one-way ANOVA. (We assume significance level alpha=0.05)
+
+The null hypothesis is that the average daily rates of different hotel types are the same. The alternative hypothesis is that the average daily rates of different hotel types are not the same.
+
+Question 1 One-way ANOVA
+a)	use the following code to remove the outlier of "adr": 
+```{r}
+      hotel_data <- read.csv( "hotel_bookings.csv" )
+      
+      boxplot( hotel_data$adr )
+      outliers <- boxplot( hotel_data$adr )$out
+      hotel_data$adr <- hotel_data$adr[ !hotel_data %in% outliers ]
+
+```
+
+b) Calculate the total variance MST.
+```{r}
+      mean_adr <- mean( hotel_data$adr )
+      MST <- var( hotel_data$adr )
+      MST
+```
+
+c) Calculate the variance within the groups MSW.
+```{r}
+      Resort <- hotel_data[ hotel_data$hotel == "Resort Hotel"  ,  ]
+      City <- hotel_data[ hotel_data$hotel == "City Hotel" , ]
+      MSW <- ( var( Resort$adr ) * ( length( Resort ) - 1 ) + var( City$adr ) * ( length( City ) - 1 ) ) / ( length( Resort ) + length( City ) - 2 )
+      MSW
+```
+
+d) Calculate the variance between sample means MSB.
+```{r}
+      MSB <- ( length( Resort ) * ( mean( Resort$adr ) - mean( hotel_data$adr ) ) ^ 2 + length( City ) * ( mean( City$adr ) - mean( hotel_data$adr ) ) ^ 2 ) / 2 - 1
+      MSB
+```
+
+e) Calculate and compare the test statistic F and the critical F at α = .05. What's the conclusion?
+```{r}
+      F = MSB / MSW
+      DF1 = length( Resort ) + length( City ) - 2 
+      DF2 = 2 - 1
+      critical_F <- df( 1 - 0.05 , DF1 , DF2 ) 
+      if ( F > critical_F ) {
+        conclusion <- "With 95% of confidence, we could reject the null hypothesis the average daily rates of different hotel types are the same. "
+      } else {
+          conclusion <- "With 95% of confidence, we fail to reject the null hypothesis the average daily rates of different hotel types are the same. "
+      }
+      cat( conclusion )
+```
+
+f) Let's do one-way ANOVA by function aov(). How to interpret the result with p-value?
+```{r}
+      analysis <- aov( adr  ~ hotel , data = hotel_data )
+      summary( analysis )
+      # P-Value is much lower than 0.05. Reject H0. The average daily rates of different hotel types aren't the same.
+```
+
+Question 2 Two-way ANOVA
+# 2a
+1. Hotel type: The average daily rates of different hotel types are not the same.
+2. Repeated guest:  The average daily rates of new guests and repeated guest are not the same.
+3. Interaction: Hotel types have different effect on new guests and repeated guests.
+
+2b
+```{r}
+      model <- aov( adr ~  hotel * is_repeated_guest , data = hotel_data )
+      summary(model)
+```
+
+

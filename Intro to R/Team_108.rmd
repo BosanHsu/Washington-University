@@ -1,0 +1,165 @@
+---
+title: "Lab Assignment 1 - Introduction to R Programming"
+output: We can submit pdf or RMD file
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Part 1: Vector
+Question 1 
+a)	Generate a vector(vec1) of 10 random numbers following a normal distribution whose mean is 6 and standard deviation is 4.
+```{r}
+vec1 <- rnorm(10, mean = 6, sd = 4)
+vec1
+
+# As the Usage of rnorm() function is rnorm(n, mean = xbar, sd = sigma), where xbar is the mean of the normal distribution and sigma is the standard deviation of the normal distribution. Here, mean value 6 and sd value 4 is chosen to meet the requirement.
+
+```
+
+b)	Generate a sequence(seq1) from 3 to 13 (inclusive), increment of the sequence is 0.5
+```{r}
+seq1 <- seq(3, 13, 0.5) 
+seq1
+# According to seq() function, the first number indicates the starting number of the sequence, and the second number indicates the last. While the last one indicates the increment of the sequence. Therefore, according to the question, seq(3, 13, 0.5) is set to create this sequence.
+```
+
+c)	Generate a vector(vec2) which is a twofold repetition of the vector c(10,15,20)
+```{r}
+vec2 <- rep(c(10,15,20),2) 
+vec2
+# Using the rep() function with c(10,15,20) as the first argument and 2 as the second argument will generate a vector that is a twofold repetition of c(10,15,20). The first argument of the rep() function is the object to be repeated, and the second argument is the times that the first argument is to be repeated. Therefore, rep(c(10,15,20),2) will repeat the vector c(10,15,20) two times.
+```
+d)	Generate a vector vec3 which is the combination of vec1, seq1, vec2, the value 10+20+30
+```{r}
+vec3 <- c(vec1, seq1, vec2, 10+20+30)
+vec3
+
+# According to c() function, simply use c(vec1, seq1, vec2, 10+20+30) can combine the vectors and numbers altogether.
+```
+
+e)	Extract the second and last two elements of vec3, storing them as a new object vec4.
+```{r}
+vec4 <- c(vec3[2], tail(vec3, 2))
+vec4
+
+# Here, tail() function can be used as tail(x, t), where x is the object intended for choosing the last t elements. Therefore, tail(vec3,2) can select the last 2 elements of vec3, and using c() function to combine it along with the second element of vec3.
+```
+f)	Generate a new vector which includes all elements in vec3 except the second and the last two elements
+```{r}
+vec_f <- vec3[-c(2, length(vec3)-1, length(vec3))]
+vec_f
+# Here, negative integer indexing is used to exclude the second and the last two elements from vec3.
+```
+
+g)	Sort vec1 in descending order(from largest to smallest) and then sort seq1 in increasing order(from smallst to largest) then create a new vector(vec5) which is the combination of the two sorted vectors. 
+```{r}
+vec5 <- c(sort(vec1, decreasing = TRUE), sort(seq1))
+vec5
+
+# sort() function is used to sort vectors in descending or increasing order. While sort(x) means that the vector x is sorted in increasing order in default, while sort(x, decreasing = TRUE) is needed if decending order is required.
+```
+
+h)	Use the colon operator as an index vector to reverse the order of vec1
+```{r}
+vec1 <- vec1[length(vec1):1]
+vec1
+
+# Here, colon operator is used to reverse the vec1, if the first number before the colon operator is larger than the second one, then a reversed part of vector is selected. Therefore vec1[length(vec1):1] selects from the last element of the vector to the first element. Therefore reversing the whole vec1's order around.
+```
+
+i)	Create a vector from vec3 that repeats the fourth element of vec3 two times, the seventh element three times, and the last element five times.
+```{r}
+vec6 <- rep(vec3[c(4, 7, length(vec3))], times = c(2, 3, 5))
+vec6
+
+# Here, vec3[c(4, 7, length(vec3)) is used to select the fourth, the seventh and the last element of vec3, and the repeated time is specified by the argument "times", and 2, 3, 5 is used to define the repeated times of these three elements respectively.
+```
+
+j)	Generate a vector that includes all values above 15 in vec3
+```{r}
+vec_j <- vec3[vec3>15]
+vec_j
+# vec3 > 15 creates a logical vector that indicates whether each element of vec3 is greater than 15. Then, this logical vector is used to subset vec3 using the square brackets [ ]. The resulting vec_j vector only contains the elements of vec3 that are greater than 15.
+```
+Part 2: Data Frame
+a)	Load the “hotel_bookings.csv” dataset
+```{r}
+setwd("D:/C_Transfer/Desktop/WUSTL/Studying_Life/501_R_programming_and_Statistics/Module 1/1.7_Lab_Assignment")
+
+# Set the working directory to the location
+
+hotel <- read.csv("hotel_bookings.csv")
+
+# Loading the csv file using the relative path.
+# Or if the RMD file is not placed in the right relative position along with hotel_bookings.csv, we have to use the full file path instead.
+# hotel <- read.csv("D:/C_Transfer/Desktop/WUSTL/Studying_Life/501_R_programming_and_Statistics/Module 1/1.7_Lab_Assignment/hotel_bookings.csv") The full path may have to change accordingly.
+```
+b)	Create a new data frame named “df1” which only includes “lead_time”, ”adults”, “babies”, “days_in_waiting_list”, “agent”, “adr”
+```{r}
+df1 <- hotel[, c("lead_time", "adults", "babies", "days_in_waiting_list", "agent", "adr")]
+
+# Using the c() function to select the required colons of the whole data frame, while specifying nothing ahead of the comma indicates that all rows shall be selected.
+```
+c)	Remove the 50th through 5000th observations from df1,note that you should save the result as df1 (we call this overwrite). Now how many rows and columns does df1 have?
+```{r}
+df1 <- df1[-c(50:5000), ]
+
+# Similar to the operations on vectors, negative indexing can be used to remove some rows or colons.
+
+row_df1 <- dim.data.frame(df1)[1]
+col_df1 <- dim.data.frame(df1)[2]
+print(row_df1)
+print(col_df1)
+
+# This retrieves the number of rows and columns of the data frame df1 using the dim.data.frame() function, and saves them to two variables row_df1 and col_df1.
+```
+d)	You can see there are a lot of "NULL" values in the column “agent”. Calculate the percentage of the "NULL" values in this column. Please calculate the percentage based on the updated df1 from c. Note that here the type of "NULL" is character in the dataset you need to select Entries by logical criterion.
+```{r}
+null_count_agent <- sum(df1$agent == "NULL")
+# count the number of "NULL" values in the "agent" column
+
+null_percentage_agent <- null_count_agent / nrow(df1) * 100
+# calculate the percentage of "NULL" values in the "agent" column
+
+cat("Percentage of 'NULL' values in the 'agent' column:", null_percentage_agent, "%\n")
+# print the percentage of "NULL" values in the "agent" column
+```
+e)	Now remove the “agent” from df1 and overwrite df1. “sapply” is a build-in function in R which is commonly used for computing statistics(such as mean, range, standard deviation…) of a dataset. Use the “help” in R to learn how to use “sapply” first and then compute the mean, standard deviation, range of each columns in df1.
+```{r}
+df1 <- df1[, -which(colnames(df1) == "agent")]
+
+# Similar as the vector operations, here colnames(df1) == "agent" is used to create a logical vector, where the place of colon "agent" is TURE, and other colons are marked FALSE. The which() function is used to find the index where the TRUE value lies, and it is the index of colon "agent" in this case. Therefore, using the negative indexing again, we can remove the "agent" row from df1
+```
+```{r}
+sapply(df1, function(x) mean=mean(x))
+```
+```{r}
+sapply(df1, function(x) sd=sd(x))
+```
+```{r}
+sapply(df1, function(x) range=diff(range(x)))
+```
+
+f)	Draw a random sample of 3000 from df1 without replacement and store the result as df2. Then compute the mean, standard deviation, range of each columns in df2.  
+```{r}
+df2 <- df1[sample(nrow(df1), 3000, replace = FALSE), ]
+
+# Using the sample() function to create a vector indicating the 3000 random indexes numbers drawn from all the rows from df1. The argument replace is set FALSE to avoid replacement in drawing the example.
+```
+
+```{r}
+sapply(df2, function(x) mean=mean(x))
+```
+
+```{r}
+sapply(df2, function(x) sd=sd(x))
+```
+```{r}
+sapply(df2, function(x) range=diff(range(x)))
+```
+If there is any question, please contact me at salihtutun@wustl.edu. 
+
+Salih Tutun
+
